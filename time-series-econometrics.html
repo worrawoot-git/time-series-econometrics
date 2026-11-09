@@ -1,0 +1,2091 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Time Series Econometrics Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f3f5f9; --card:#ffffff; --ink:#142033; --ink2:#46526a; --muted:#7b859a; --line:#dde3ee; --line2:#eef1f6;
+  --acc:#1f56b8; --acc-d:#163f88; --acc-bg:#e9f0fc; --ok:#17784f; --ok-bg:#e4f4ec; --bad:#b8342f; --bad-bg:#fbe9e8;
+  --warn:#9a6a00; --warn-bg:#fff4dc; --r:14px; --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Thai',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;font-size:inherit;cursor:pointer}
+.hidden{display:none!important}
+/* header */
+.top{background:linear-gradient(120deg,#10284f 0%,#1a3f7d 55%,#22539e 100%);color:#fff;padding:22px 24px 20px}
+.top-in{max-width:1220px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:14px}
+.logo{width:46px;height:46px;border-radius:12px;background:rgba(255,255,255,.14);display:grid;place-items:center;font-family:var(--mono);font-size:22px;font-weight:500;border:1px solid rgba(255,255,255,.25)}
+.brand h1{margin:0;font-size:21px;font-weight:700;letter-spacing:.1px}
+.brand p{margin:2px 0 0;font-size:13.5px;opacity:.82}
+.actions{display:flex;gap:10px;align-items:center}
+.seg{display:inline-flex;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:3px}
+.seg button{border:0;background:transparent;color:#fff;padding:6px 14px;border-radius:999px;font-weight:500;font-size:14px}
+.seg button.on{background:#fff;color:var(--acc-d)}
+.btn{border:1px solid var(--line);background:#fff;color:var(--ink);padding:9px 16px;border-radius:10px;font-weight:500;display:inline-flex;align-items:center;gap:8px;transition:background .15s,border-color .15s,box-shadow .15s}
+.btn:hover{border-color:#b9c3d6;background:#fafbfd}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--acc);border-color:var(--acc);color:#fff}
+.btn.primary:hover{background:var(--acc-d)}
+.btn.big{padding:12px 26px;font-size:16px;border-radius:12px}
+.btn.reset{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.3)}
+.btn.reset:hover{background:rgba(255,255,255,.22)}
+.btn.sm{padding:6px 11px;font-size:13px;border-radius:8px}
+.btn svg{width:16px;height:16px;flex:none}
+main{max-width:1220px;margin:0 auto;padding:22px 16px 40px}
+.step{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;margin-bottom:18px;box-shadow:0 1px 2px rgba(20,32,51,.04);position:relative}
+.step-h{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.step-h .num{width:30px;height:30px;border-radius:50%;background:var(--acc);color:#fff;display:grid;place-items:center;font-weight:600;font-size:14px;flex:none}
+.step-h h2{margin:0;font-size:18px;font-weight:600}
+.step-h .hint{margin-left:auto;color:var(--muted);font-size:13px}
+.step.locked{opacity:.55;pointer-events:none}
+.step.locked .step-h .num{background:#a5afc2}
+/* module cards */
+.mod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.mod{border:1.5px solid var(--line);border-radius:12px;padding:14px 15px;background:#fff;text-align:left;color:var(--ink);display:flex;flex-direction:column;gap:6px;transition:border-color .15s,box-shadow .15s,transform .1s}
+.mod:hover{border-color:#9db4dd;box-shadow:0 3px 10px rgba(31,86,184,.08)}
+.mod.on{border-color:var(--acc);background:var(--acc-bg);box-shadow:0 0 0 3px rgba(31,86,184,.12)}
+.mod .tag{font-family:var(--mono);font-size:11.5px;font-weight:500;color:var(--acc);background:#fff;border:1px solid #c9d7f1;border-radius:6px;padding:1px 7px;align-self:flex-start}
+.mod b{font-size:15.5px;font-weight:600;line-height:1.35}
+.mod span.d{font-size:13.3px;color:var(--ink2);line-height:1.5}
+.mod-info{margin-top:16px;border:1px solid #cfdcf3;background:linear-gradient(180deg,#f6f9ff,#fff);border-radius:12px;padding:16px 18px}
+.mod-info h3{margin:0 0 8px;font-size:16.5px}
+.mod-info .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px 22px}
+.mod-info .grid div{font-size:14px;color:var(--ink2)}
+.mod-info .grid div b{color:var(--ink);display:block;font-size:13px;font-weight:600;text-transform:none;margin-bottom:2px}
+.eq{font-family:var(--mono);font-size:13px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 10px;color:#22314d;display:block;margin-top:4px;overflow-x:auto;white-space:nowrap}
+/* data */
+.drop{display:block;border:2px dashed #b9c6dd;border-radius:12px;padding:22px;text-align:center;background:#fafbfe;transition:background .15s,border-color .15s;cursor:pointer}
+.drop.over{background:var(--acc-bg);border-color:var(--acc)}
+.drop b{display:block;font-size:15.5px;margin-bottom:2px}
+.drop small{color:var(--muted)}
+.data-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.fmt{font-size:13px;color:var(--ink2);background:var(--line2);border-radius:10px;padding:10px 12px;margin-top:12px}
+.fmt code{font-family:var(--mono);font-size:12.5px}
+.loaded{margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px}
+.pill{display:inline-flex;align-items:center;gap:6px;background:var(--ok-bg);color:var(--ok);border-radius:999px;padding:3px 11px;font-weight:500;font-size:13px}
+.pill.gray{background:var(--line2);color:var(--ink2)}
+.preview{margin-top:10px;max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+/* settings */
+.sub-h{font-weight:600;font-size:14.5px;margin:4px 0 8px;color:var(--ink)}
+.vars{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.chk{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:9px;padding:6px 11px;font-size:14px;background:#fff;cursor:pointer;user-select:none}
+.chk input{accent-color:var(--acc);width:15px;height:15px;margin:0}
+.chk.on{border-color:var(--acc);background:var(--acc-bg)}
+.note{font-size:12.8px;color:var(--muted);margin:4px 0 0}
+.set-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(205px,1fr));gap:12px 14px;margin-top:8px}
+.fld label{display:block;font-size:13px;color:var(--ink2);margin-bottom:4px;font-weight:500}
+.fld input[type=number],.fld select{width:100%;border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-family:inherit;font-size:14px;background:#fff;color:var(--ink)}
+.fld input:focus,.fld select:focus{outline:2px solid rgba(31,86,184,.25);border-color:var(--acc)}
+.fld.cb{display:flex;align-items:flex-end}
+.run-row{display:flex;justify-content:center;margin-top:20px;gap:12px;flex-wrap:wrap}
+.err{background:var(--bad-bg);color:var(--bad);border:1px solid #f0c4c1;border-radius:10px;padding:10px 14px;margin-top:12px;font-size:14px}
+.warnbox{background:var(--warn-bg);color:var(--warn);border:1px solid #f1dca6;border-radius:10px;padding:9px 13px;margin:0 0 12px;font-size:13.5px}
+/* results */
+.res-top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px}
+.viewseg{display:inline-flex;border:1px solid var(--line);border-radius:12px;padding:4px;background:var(--line2);gap:4px}
+.viewseg button{border:0;background:transparent;padding:9px 18px;border-radius:9px;font-weight:600;color:var(--ink2);display:inline-flex;gap:8px;align-items:center}
+.viewseg button.on{background:#fff;color:var(--acc);box-shadow:0 1px 3px rgba(20,32,51,.1)}
+.viewseg svg{width:17px;height:17px}
+.keybox{border-left:4px solid var(--acc);background:var(--acc-bg);border-radius:0 10px 10px 0;padding:11px 16px;margin-bottom:16px}
+.keybox b{display:block;margin-bottom:4px;color:var(--acc-d)}
+.keybox ul{margin:0;padding-left:20px}
+.keybox li{margin:2px 0;font-size:14.3px}
+.tcard{border:1px solid var(--line);border-radius:12px;margin-bottom:16px;overflow:hidden;background:#fff}
+.tcard h4{margin:0;padding:11px 16px;font-size:15px;background:#f7f9fc;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:baseline}
+.tcard h4 .ix{font-family:var(--mono);color:var(--acc);font-size:13px;font-weight:500}
+.tscroll{overflow-x:auto}
+table.t{border-collapse:collapse;width:100%;font-size:13.6px}
+table.t th{background:#fbfcfe;color:var(--ink2);font-weight:600;text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.t td{padding:7px 12px;border-bottom:1px solid var(--line2);white-space:nowrap}
+table.t td.num{font-family:var(--mono);font-size:13px;text-align:right}
+table.t th.num{text-align:right}
+table.t tr:hover td{background:#fafcff}
+table.t td.ok{color:var(--ok);font-weight:600;font-family:inherit}
+table.t td.bad{color:var(--bad);font-weight:600;font-family:inherit}
+table.t td.strong{font-weight:600}
+.explain{padding:10px 16px 12px;background:#fcfcfd;border-top:1px solid var(--line);font-size:13.4px;color:var(--ink2)}
+.explain b{color:var(--ink);font-size:13px}
+.explain ul{margin:4px 0 0;padding-left:20px}
+.explain li{margin:2px 0}
+.chart-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:14px}
+.ccard{border:1px solid var(--line);border-radius:12px;background:#fff;padding:10px 12px 12px;position:relative}
+.ccard.wide{grid-column:1/-1}
+.ccard .cbar{display:flex;justify-content:flex-end;margin-bottom:2px}
+.ccard .cbox{position:relative;height:300px}
+.ccard.wide .cbox{height:360px}
+.ccard.sq .cbox{height:340px}
+.loader{position:fixed;inset:0;background:rgba(243,245,249,.7);display:grid;place-items:center;z-index:50;backdrop-filter:blur(2px)}
+.loader div{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 26px;box-shadow:0 10px 30px rgba(20,32,51,.12);display:flex;gap:12px;align-items:center;font-weight:500}
+.spin{width:22px;height:22px;border:3px solid var(--acc-bg);border-top-color:var(--acc);border-radius:50%;animation:sp 0.8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+footer{max-width:1220px;margin:0 auto;padding:0 16px 30px;color:var(--muted);font-size:12.5px;text-align:center}
+@media (max-width:640px){
+  .top{padding:16px}
+  .brand h1{font-size:17px}
+  .step{padding:16px 14px}
+  .chart-grid{grid-template-columns:1fr}
+  .ccard .cbox{height:260px}
+  .viewseg button{padding:8px 12px}
+}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <div class="brand">
+    <div class="logo">∂y</div>
+    <div>
+      <h1 data-th="ห้องปฏิบัติการเศรษฐมิติอนุกรมเวลา" data-en="Time Series Econometrics Lab"></h1>
+      <p data-th="วิเคราะห์ข้อมูลอนุกรมเวลาขั้นสูง: ARIMA · Unit Root · Cointegration · VAR/VECM · IRF · GARCH" data-en="Advanced time-series analysis: ARIMA · Unit Root · Cointegration · VAR/VECM · IRF · GARCH"></p>
+    </div>
+  </div>
+  <div class="actions">
+    <div class="seg" role="group" aria-label="Language"><button id="btnTH" type="button">ไทย</button><button id="btnEN" type="button">English</button></div>
+    <button class="btn reset" id="btnReset" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg><span data-th="รีเซ็ตหน้า" data-en="Reset"></span></button>
+  </div>
+</div></header>
+
+<main>
+  <section class="step" id="step1">
+    <div class="step-h"><span class="num">1</span><h2 data-th="เลือกประเภทการวิเคราะห์" data-en="Choose an analysis"></h2></div>
+    <div class="mod-grid" id="modGrid"></div>
+    <div class="mod-info hidden" id="modInfo"></div>
+  </section>
+
+  <section class="step locked" id="step2">
+    <div class="step-h"><span class="num">2</span><h2 data-th="นำเข้าข้อมูล" data-en="Load data"></h2><span class="hint" id="step2hint" data-th="เลือกการวิเคราะห์ก่อน" data-en="Choose an analysis first"></span></div>
+    <label class="drop" id="drop">
+      <input type="file" id="fileIn" accept=".xlsx,.xls,.csv" hidden>
+      <b data-th="แนบไฟล์ Excel (.xlsx / .xls / .csv)" data-en="Attach an Excel file (.xlsx / .xls / .csv)"></b>
+      <small data-th="คลิกเพื่อเลือกไฟล์ หรือ ลากไฟล์มาวางที่นี่" data-en="Click to browse or drag & drop a file here"></small>
+    </label>
+    <div class="data-actions">
+      <button class="btn" id="btnSample" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/></svg><span id="btnSampleTxt"></span></button>
+      <button class="btn" id="btnDlSample" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><span id="btnDlSampleTxt"></span></button>
+    </div>
+    <div class="fmt" id="fmtBox"></div>
+    <div id="dataInfo"></div>
+  </section>
+
+  <section class="step locked" id="step3">
+    <div class="step-h"><span class="num">3</span><h2 data-th="เลือกตัวแปรและตั้งค่าการวิเคราะห์" data-en="Variables & settings"></h2></div>
+    <div id="varBox"></div>
+    <div id="setBox"></div>
+    <div class="run-row"><button class="btn primary big" id="btnRun" type="button"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg><span data-th="ประมวลผล" data-en="Run analysis"></span></button></div>
+    <div id="errBox"></div>
+  </section>
+
+  <section class="step hidden" id="step4">
+    <div class="step-h"><span class="num">4</span><h2 data-th="ผลการวิเคราะห์" data-en="Results"></h2><span class="hint" id="resHint"></span></div>
+    <div id="keyBox"></div>
+    <div class="res-top">
+      <div class="viewseg">
+        <button id="vTable" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16"/></svg><span data-th="แสดงผลแบบตาราง" data-en="Table view"></span></button>
+        <button id="vChart" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg><span data-th="แสดงผลแบบกราฟ" data-en="Chart view"></span></button>
+      </div>
+      <button class="btn" id="btnXlsx" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><span data-th="ดาวน์โหลดตารางทั้งหมด (Excel)" data-en="Download all tables (Excel)"></span></button>
+    </div>
+    <div id="resTables"></div>
+    <div id="resCharts" class="chart-grid hidden"></div>
+  </section>
+</main>
+<footer data-th="การคำนวณทั้งหมดทำงานในเบราว์เซอร์ของคุณ ไม่มีการส่งข้อมูลออกไปภายนอก · ผลลัพธ์ใช้เพื่อการศึกษาและการวิจัยเบื้องต้น ควรตรวจสอบกับซอฟต์แวร์เฉพาะทาง (EViews, Stata, R, Python) สำหรับงานตีพิมพ์" data-en="All computations run locally in your browser — no data leaves your device · Intended for teaching and exploratory research; cross-check with dedicated software (EViews, Stata, R, Python) for publication."></footer>
+<div class="loader hidden" id="loader"><div><span class="spin"></span><span id="loaderTxt"></span></div></div>
+
+<script>
+/* ================= Time Series Econometrics Engine ================= */
+const TS = (function () {
+  'use strict';
+  // ---------- basic helpers ----------
+  const sum = a => { let s = 0; for (const v of a) s += v; return s; };
+  const mean = a => sum(a) / a.length;
+  function variance(a, ddof = 1) { const m = mean(a); let s = 0; for (const v of a) s += (v - m) * (v - m); return s / (a.length - ddof); }
+  const std = (a, ddof = 1) => Math.sqrt(variance(a, ddof));
+  const diff = (a, lag = 1) => { const o = []; for (let i = lag; i < a.length; i++) o.push(a[i] - a[i - lag]); return o; };
+  const range = n => Array.from({ length: n }, (_, i) => i);
+
+  // ---------- linear algebra ----------
+  function zeros(r, c) { return Array.from({ length: r }, () => new Array(c).fill(0)); }
+  function eye(n) { const I = zeros(n, n); for (let i = 0; i < n; i++) I[i][i] = 1; return I; }
+  function tr(A) { const r = A.length, c = A[0].length, B = zeros(c, r); for (let i = 0; i < r; i++) for (let j = 0; j < c; j++) B[j][i] = A[i][j]; return B; }
+  function mm(A, B) {
+    const r = A.length, n = B.length, c = B[0].length, C = zeros(r, c);
+    for (let i = 0; i < r; i++) { const Ai = A[i], Ci = C[i]; for (let k = 0; k < n; k++) { const a = Ai[k]; if (a === 0) continue; const Bk = B[k]; for (let j = 0; j < c; j++) Ci[j] += a * Bk[j]; } }
+    return C;
+  }
+  const mv = (A, v) => A.map(r => { let s = 0; for (let j = 0; j < v.length; j++) s += r[j] * v[j]; return s; });
+  const madd = (A, B, s = 1) => A.map((r, i) => r.map((v, j) => v + s * B[i][j]));
+  const mscale = (A, s) => A.map(r => r.map(v => v * s));
+  function inv(A) {
+    const n = A.length; let scale = 0;
+    for (const r of A) for (const v of r) scale = Math.max(scale, Math.abs(v));
+    const M = A.map((r, i) => { const row = r.slice(); for (let j = 0; j < n; j++) row.push(i === j ? 1 : 0); return row; });
+    for (let c = 0; c < n; c++) {
+      let piv = c, best = Math.abs(M[c][c]);
+      for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > best) { best = Math.abs(M[r][c]); piv = r; }
+      if (!(best > scale * 1e-14)) throw new Error('SINGULAR');
+      if (piv !== c) { const t = M[c]; M[c] = M[piv]; M[piv] = t; }
+      const d = M[c][c]; for (let j = 0; j < 2 * n; j++) M[c][j] /= d;
+      for (let r = 0; r < n; r++) { if (r === c) continue; const f = M[r][c]; if (f === 0) continue; for (let j = 0; j < 2 * n; j++) M[r][j] -= f * M[c][j]; }
+    }
+    return M.map(r => r.slice(n));
+  }
+  function chol(A) {
+    const n = A.length, Lm = zeros(n, n);
+    for (let i = 0; i < n; i++) for (let j = 0; j <= i; j++) {
+      let s = A[i][j]; for (let k = 0; k < j; k++) s -= Lm[i][k] * Lm[j][k];
+      if (i === j) { if (s <= 0) throw new Error('NOT_PD'); Lm[i][i] = Math.sqrt(s); } else Lm[i][j] = s / Lm[j][j];
+    }
+    return Lm;
+  }
+  function logdet(A) { const Lc = chol(A); let s = 0; for (let i = 0; i < A.length; i++) s += 2 * Math.log(Lc[i][i]); return s; }
+
+  // symmetric eigen (Jacobi) -> {values, vectors(columns)}
+  function eigSym(S) {
+    const n = S.length, a = S.map(r => r.slice()), V = eye(n);
+    for (let sweep = 0; sweep < 100; sweep++) {
+      let off = 0; for (let p = 0; p < n; p++) for (let q = p + 1; q < n; q++) off += a[p][q] * a[p][q];
+      if (off < 1e-24) break;
+      for (let p = 0; p < n; p++) for (let q = p + 1; q < n; q++) {
+        if (Math.abs(a[p][q]) < 1e-300) continue;
+        const theta = (a[q][q] - a[p][p]) / (2 * a[p][q]);
+        const t = (theta >= 0 ? 1 : -1) / (Math.abs(theta) + Math.sqrt(theta * theta + 1));
+        const c = 1 / Math.sqrt(t * t + 1), s = t * c;
+        for (let k = 0; k < n; k++) { const akp = a[k][p], akq = a[k][q]; a[k][p] = c * akp - s * akq; a[k][q] = s * akp + c * akq; }
+        for (let k = 0; k < n; k++) { const apk = a[p][k], aqk = a[q][k]; a[p][k] = c * apk - s * aqk; a[q][k] = s * apk + c * aqk; }
+        for (let k = 0; k < n; k++) { const vkp = V[k][p], vkq = V[k][q]; V[k][p] = c * vkp - s * vkq; V[k][q] = s * vkp + c * vkq; }
+      }
+    }
+    const idx = range(n).sort((i, j) => a[j][j] - a[i][i]);
+    return { values: idx.map(i => a[i][i]), vectors: V.map(r => idx.map(i => r[i])) };
+  }
+
+  // general real eigenvalues (Hessenberg + Francis QR, after Numerical Recipes)
+  function eigGeneral(Ain) {
+    const n = Ain.length; const a = Ain.map(r => r.slice());
+    if (n === 1) return [{ re: a[0][0], im: 0 }];
+    for (let m = 1; m < n - 1; m++) {
+      let x = 0, i = m;
+      for (let j = m; j < n; j++) if (Math.abs(a[j][m - 1]) > Math.abs(x)) { x = a[j][m - 1]; i = j; }
+      if (i !== m) {
+        for (let j = m - 1; j < n; j++) { const t = a[i][j]; a[i][j] = a[m][j]; a[m][j] = t; }
+        for (let j = 0; j < n; j++) { const t = a[j][i]; a[j][i] = a[j][m]; a[j][m] = t; }
+      }
+      if (x !== 0) for (i = m + 1; i < n; i++) {
+        let y = a[i][m - 1];
+        if (y !== 0) { y /= x; a[i][m - 1] = y; for (let j = m; j < n; j++) a[i][j] -= y * a[m][j]; for (let j = 0; j < n; j++) a[j][m] += y * a[j][i]; }
+      }
+    }
+    for (let i = 2; i < n; i++) for (let j = 0; j < i - 1; j++) a[i][j] = 0;
+    const wr = new Array(n).fill(0), wi = new Array(n).fill(0);
+    const sign = (x, y) => (y >= 0 ? Math.abs(x) : -Math.abs(x));
+    let nn, m, l, k, j, its, i, mmin, z = 0, y, x, w, v, u, t, s, r = 0, q = 0, p = 0, anorm = 0;
+    for (i = 0; i < n; i++) for (j = Math.max(i - 1, 0); j < n; j++) anorm += Math.abs(a[i][j]);
+    nn = n - 1; t = 0;
+    while (nn >= 0) {
+      its = 0;
+      do {
+        for (l = nn; l >= 1; l--) { s = Math.abs(a[l - 1][l - 1]) + Math.abs(a[l][l]); if (s === 0) s = anorm; if (Math.abs(a[l][l - 1]) + s === s) { a[l][l - 1] = 0; break; } }
+        x = a[nn][nn];
+        if (l === nn) { wr[nn] = x + t; wi[nn--] = 0; }
+        else {
+          y = a[nn - 1][nn - 1]; w = a[nn][nn - 1] * a[nn - 1][nn];
+          if (l === nn - 1) {
+            p = 0.5 * (y - x); q = p * p + w; z = Math.sqrt(Math.abs(q)); x += t;
+            if (q >= 0) { z = p + sign(z, p); wr[nn - 1] = wr[nn] = x + z; if (z) wr[nn] = x - w / z; wi[nn - 1] = wi[nn] = 0; }
+            else { wr[nn - 1] = wr[nn] = x + p; wi[nn - 1] = -(wi[nn] = z); }
+            nn -= 2;
+          } else {
+            if (its === 60) throw new Error('EIG_NO_CONV');
+            if (its === 10 || its === 20) { t += x; for (i = 0; i <= nn; i++) a[i][i] -= x; s = Math.abs(a[nn][nn - 1]) + Math.abs(a[nn - 1][nn - 2]); y = x = 0.75 * s; w = -0.4375 * s * s; }
+            ++its;
+            for (m = nn - 2; m >= l; m--) {
+              z = a[m][m]; r = x - z; s = y - z;
+              p = (r * s - w) / a[m + 1][m] + a[m][m + 1]; q = a[m + 1][m + 1] - z - r - s; r = a[m + 2][m + 1];
+              s = Math.abs(p) + Math.abs(q) + Math.abs(r); p /= s; q /= s; r /= s;
+              if (m === l) break;
+              u = Math.abs(a[m][m - 1]) * (Math.abs(q) + Math.abs(r));
+              v = Math.abs(p) * (Math.abs(a[m - 1][m - 1]) + Math.abs(z) + Math.abs(a[m + 1][m + 1]));
+              if (u + v === v) break;
+            }
+            for (i = m + 2; i <= nn; i++) { a[i][i - 2] = 0; if (i !== m + 2) a[i][i - 3] = 0; }
+            for (k = m; k <= nn - 1; k++) {
+              if (k !== m) {
+                p = a[k][k - 1]; q = a[k + 1][k - 1]; r = 0; if (k !== nn - 1) r = a[k + 2][k - 1];
+                if ((x = Math.abs(p) + Math.abs(q) + Math.abs(r)) !== 0) { p /= x; q /= x; r /= x; }
+              }
+              if ((s = sign(Math.sqrt(p * p + q * q + r * r), p)) !== 0) {
+                if (k === m) { if (l !== m) a[k][k - 1] = -a[k][k - 1]; } else a[k][k - 1] = -s * x;
+                p += s; x = p / s; y = q / s; z = r / s; q /= p; r /= p;
+                for (j = k; j <= nn; j++) { p = a[k][j] + q * a[k + 1][j]; if (k !== nn - 1) { p += r * a[k + 2][j]; a[k + 2][j] -= p * z; } a[k + 1][j] -= p * y; a[k][j] -= p * x; }
+                mmin = nn < k + 3 ? nn : k + 3;
+                for (i = l; i <= mmin; i++) { p = x * a[i][k] + y * a[i][k + 1]; if (k !== nn - 1) { p += z * a[i][k + 2]; a[i][k + 2] -= p * r; } a[i][k + 1] -= p * q; a[i][k] -= p; }
+              }
+            }
+          }
+        }
+      } while (l < nn - 1);
+    }
+    return range(n).map(i => ({ re: wr[i], im: wi[i] }));
+  }
+
+  // ---------- distributions ----------
+  function lgamma(x) {
+    const c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+    if (x < 0.5) return Math.log(Math.PI / Math.abs(Math.sin(Math.PI * x))) - lgamma(1 - x);
+    x -= 1; let a = c[0]; const t = x + 7.5; for (let i = 1; i < 9; i++) a += c[i] / (x + i);
+    return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+  }
+  function betacf(x, a, b) {
+    const FPMIN = 1e-300; let qab = a + b, qap = a + 1, qam = a - 1, c = 1, d = 1 - qab * x / qap;
+    if (Math.abs(d) < FPMIN) d = FPMIN; d = 1 / d; let h = d;
+    for (let m = 1; m <= 300; m++) {
+      const m2 = 2 * m; let aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+      d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN; c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN; d = 1 / d; h *= d * c;
+      aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+      d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN; c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN; d = 1 / d;
+      const del = d * c; h *= del; if (Math.abs(del - 1) < 3e-14) break;
+    }
+    return h;
+  }
+  function ibeta(x, a, b) {
+    if (x <= 0) return 0; if (x >= 1) return 1;
+    const bt = Math.exp(lgamma(a + b) - lgamma(a) - lgamma(b) + a * Math.log(x) + b * Math.log(1 - x));
+    return x < (a + 1) / (a + b + 2) ? bt * betacf(x, a, b) / a : 1 - bt * betacf(1 - x, b, a) / b;
+  }
+  function gammp(a, x) {
+    if (x <= 0) return 0;
+    const gln = lgamma(a);
+    if (x < a + 1) { let ap = a, s = 1 / a, del = s; for (let n = 0; n < 1000; n++) { ap++; del *= x / ap; s += del; if (Math.abs(del) < Math.abs(s) * 1e-15) break; } return s * Math.exp(-x + a * Math.log(x) - gln); }
+    let b = x + 1 - a, c = 1e300, d = 1 / b, h = d;
+    for (let i = 1; i < 1000; i++) { const an = -i * (i - a); b += 2; d = an * d + b; if (Math.abs(d) < 1e-300) d = 1e-300; c = b + an / c; if (Math.abs(c) < 1e-300) c = 1e-300; d = 1 / d; const del = d * c; h *= del; if (Math.abs(del - 1) < 1e-15) break; }
+    return 1 - Math.exp(-x + a * Math.log(x) - gln) * h;
+  }
+  function erfc(x) {
+    const z = Math.abs(x), t = 1 / (1 + 0.5 * z);
+    const r = t * Math.exp(-z * z - 1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 + t * (-0.18628806 + t * (0.27886807 + t * (-1.13520398 + t * (1.48851587 + t * (-0.82215223 + t * 0.17087277)))))))));
+    return x >= 0 ? r : 2 - r;
+  }
+  const normCdf = x => 0.5 * erfc(-x / Math.SQRT2);
+  const normPdf = x => Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI);
+  const pNorm = z => (isFinite(z) ? erfc(Math.abs(z) / Math.SQRT2) : (isNaN(z) ? NaN : 0));
+  const pT = (t, df) => (isNaN(t) ? NaN : !isFinite(t) ? 0 : ibeta(df / (df + t * t), df / 2, 0.5));
+  const pChi2 = (x, k) => (isNaN(x) ? NaN : x <= 0 ? 1 : 1 - gammp(k / 2, x / 2));
+  const pF = (f, d1, d2) => (isNaN(f) ? NaN : f <= 0 ? 1 : ibeta(d2 / (d2 + d1 * f), d2 / 2, d1 / 2));
+  function normInv(p) {
+    const a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02, 1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
+    const b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02, 6.680131188771972e+01, -1.328068155288572e+01];
+    const c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00, -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00];
+    const d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00, 3.754408661907416e+00];
+    const pl = 0.02425; let q, r;
+    if (p < pl) { q = Math.sqrt(-2 * Math.log(p)); return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+    if (p > 1 - pl) { q = Math.sqrt(-2 * Math.log(1 - p)); return -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+    q = p - 0.5; r = q * q;
+    return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
+  }
+
+  // ---------- OLS ----------
+  function ols(y, X) {
+    const n = y.length, k = X[0].length;
+    const Xt = tr(X), XtXi = inv(mm(Xt, X));
+    const Xty = Xt.map(r => { let s = 0; for (let i = 0; i < n; i++) s += r[i] * y[i]; return s; });
+    const b = mv(XtXi, Xty);
+    const fitted = X.map(r => { let s = 0; for (let j = 0; j < k; j++) s += r[j] * b[j]; return s; });
+    const resid = y.map((v, i) => v - fitted[i]);
+    let ssr = 0; for (const e of resid) ssr += e * e;
+    const df = n - k, s2 = ssr / df;
+    const se = b.map((_, j) => Math.sqrt(Math.max(XtXi[j][j] * s2, 0)));
+    const t = b.map((v, j) => v / se[j]);
+    const p = t.map(v => pT(v, df));
+    const hasConst = range(k).some(j => X.every(r => r[j] === 1));
+    const ym = mean(y); let sst = 0; for (const v of y) sst += (hasConst ? (v - ym) ** 2 : v * v);
+    const r2 = 1 - ssr / sst;
+    const adjr2 = 1 - (1 - r2) * (n - (hasConst ? 1 : 0)) / df;
+    const kk = hasConst ? k - 1 : k;
+    const F = kk > 0 ? ((sst - ssr) / kk) / (ssr / df) : NaN;
+    const Fp = kk > 0 ? pF(F, kk, df) : NaN;
+    const ll = -n / 2 * (Math.log(2 * Math.PI) + Math.log(ssr / n) + 1);
+    let dwn = 0; for (let i = 1; i < n; i++) dwn += (resid[i] - resid[i - 1]) ** 2;
+    return { b, se, t, p, fitted, resid, ssr, s2, ser: Math.sqrt(s2), df, n, k, r2, adjr2, F, Fp, ll, aic: -2 * ll + 2 * k, bic: -2 * ll + k * Math.log(n), hq: -2 * ll + 2 * k * Math.log(Math.log(n)), dw: dwn / ssr, XtXi };
+  }
+
+  // ---------- descriptive & diagnostics ----------
+  function acf(x, nlags) {
+    const n = x.length, m = mean(x), d = x.map(v => v - m); let c0 = 0; for (const v of d) c0 += v * v; c0 /= n;
+    const r = [1]; for (let k = 1; k <= nlags; k++) { let s = 0; for (let t = k; t < n; t++) s += d[t] * d[t - k]; r.push(s / n / c0); }
+    return r;
+  }
+  function pacf(x, nlags) {
+    const r = acf(x, nlags), out = [1]; let phi = [];
+    for (let k = 1; k <= nlags; k++) {
+      let num = r[k], den = 1;
+      for (let j = 0; j < k - 1; j++) { num -= phi[j] * r[k - 1 - j]; den -= phi[j] * r[j + 1]; }
+      const pkk = num / den, nphi = [];
+      for (let j = 0; j < k - 1; j++) nphi.push(phi[j] - pkk * phi[k - 2 - j]);
+      nphi.push(pkk); phi = nphi; out.push(pkk);
+    }
+    return out;
+  }
+  function ljungBox(x, lags, dfAdj = 0) {
+    const n = x.length, r = acf(x, lags); let Q = 0;
+    for (let k = 1; k <= lags; k++) Q += r[k] * r[k] / (n - k);
+    Q *= n * (n + 2); const df = Math.max(lags - dfAdj, 1);
+    return { Q, df, p: pChi2(Q, df), lags };
+  }
+  function moments(x) {
+    const n = x.length, m = mean(x); let m2 = 0, m3 = 0, m4 = 0;
+    for (const v of x) { const d = v - m; m2 += d * d; m3 += d * d * d; m4 += d * d * d * d; }
+    m2 /= n; m3 /= n; m4 /= n;
+    return { n, mean: m, skew: m3 / Math.pow(m2, 1.5), kurt: m4 / (m2 * m2) };
+  }
+  function jarqueBera(x) { const { n, skew, kurt } = moments(x); const JB = n / 6 * (skew * skew + (kurt - 3) ** 2 / 4); return { JB, p: pChi2(JB, 2), skew, kurt }; }
+  function describe(x) {
+    const s = x.slice().sort((a, b) => a - b), n = x.length;
+    const med = n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2;
+    const jb = jarqueBera(x);
+    return { n, mean: mean(x), sd: std(x), min: s[0], max: s[n - 1], median: med, skew: jb.skew, kurt: jb.kurt, JB: jb.JB, jbp: jb.p };
+  }
+  function archLM(x, q) {
+    const m = mean(x), e2 = x.map(v => (v - m) ** 2), Y = [], X = [];
+    for (let t = q; t < e2.length; t++) { const row = [1]; for (let i = 1; i <= q; i++) row.push(e2[t - i]); Y.push(e2[t]); X.push(row); }
+    const r = ols(Y, X); const LM = Y.length * r.r2;
+    return { LM, df: q, p: pChi2(LM, q), lags: q };
+  }
+
+  // ---------- MacKinnon critical values / p-values ----------
+  const MK_CRIT = {
+    '1n': [[-2.56574, -2.2358, -3.627, 0], [-1.94100, -0.2686, -3.365, 31.223], [-1.61682, 0.2656, -2.714, 25.364]],
+    '1c': [[-3.43035, -6.5393, -16.786, -79.433], [-2.86154, -2.8903, -4.234, -40.040], [-2.56677, -1.5384, -2.809, 0]],
+    '1ct': [[-3.95877, -9.0531, -28.428, -134.155], [-3.41049, -4.3904, -9.036, -45.374], [-3.12705, -2.5856, -3.925, -22.380]],
+    '2c': [[-3.89644, -10.9519, -33.527, 0], [-3.33613, -6.1101, -6.823, 0], [-3.04445, -4.2412, -2.720, 0]],
+    '3c': [[-4.29374, -14.4354, -33.195, 47.433], [-3.74066, -8.5631, -10.852, 27.982], [-3.45218, -6.2143, -3.718, 0]],
+    '4c': [[-4.64332, -18.1031, -37.972, 0], [-4.09600, -11.2349, -11.175, 0], [-3.81020, -8.3931, -4.137, 0]]
+  };
+  function mkCrit(N, reg, T) { return MK_CRIT[N + reg].map(b => b[0] + b[1] / T + b[2] / (T * T) + b[3] / (T * T * T)); }
+  const MKP = {
+    '1n': { star: -1.04, min: -19.04, max: Infinity, small: [0.6344, 1.2378, 0.032496], large: [0.4797, 0.93557, -0.06999, 0.033066] },
+    '1c': { star: -1.61, min: -18.83, max: 2.74, small: [2.1659, 1.4412, 0.038269], large: [1.7339, 0.93202, -0.12745, -0.010368] },
+    '1ct': { star: -2.89, min: -16.18, max: 0.7, small: [3.2512, 1.6047, 0.049588], large: [2.5261, 0.61654, -0.37956, -0.060285] },
+    '2c': { star: -2.62, min: -18.86, max: 0.92, small: [2.92, 1.5012, 0.039796], large: [2.1945, 0.64695, -0.29198, -0.042377] }
+  };
+  function mkP(stat, reg, N = 1) {
+    const c = MKP[N + reg]; if (!c) return NaN;
+    if (stat > c.max) return 1; if (stat < c.min) return 0;
+    const co = stat <= c.star ? c.small : c.large; let v = 0, pw = 1;
+    for (const k of co) { v += k * pw; pw *= stat; }
+    return normCdf(v);
+  }
+  // interpolate p between critical values: ps ascending e.g. [0.01,0.05,0.10]; leftTail = more negative is significant
+  function interpP(stat, cvs, ps, leftTail) {
+    const pts = cvs.map((c, i) => ({ c, p: ps[i] }));
+    const sig = s => (leftTail ? -s : s); // larger sig = more significant
+    pts.sort((a, b) => a.p - b.p); // most significant first
+    if (sig(stat) >= sig(pts[0].c)) return { p: pts[0].p, txt: '<' + pts[0].p.toFixed(3).replace(/0+$/, '').replace(/\.$/, '') , bound: -1 };
+    const last = pts[pts.length - 1];
+    if (sig(stat) <= sig(last.c)) return { p: last.p, txt: '>' + last.p.toFixed(3).replace(/0+$/, '').replace(/\.$/, ''), bound: 1 };
+    for (let i = 0; i < pts.length - 1; i++) {
+      const a = pts[i], b = pts[i + 1];
+      if (sig(stat) <= sig(a.c) && sig(stat) >= sig(b.c)) { const w = (sig(a.c) - sig(stat)) / (sig(a.c) - sig(b.c)); const p = a.p + w * (b.p - a.p); return { p, txt: p.toFixed(4), bound: 0 }; }
+    }
+    return { p: NaN, txt: '—', bound: 0 };
+  }
+
+  // ---------- unit root tests ----------
+  function adfTest(y, reg = 'c', opts = {}) {
+    const n = y.length, kdet = reg === 'n' ? 0 : reg === 'c' ? 1 : 2;
+    let maxlag = opts.maxlag != null ? opts.maxlag : Math.floor(12 * Math.pow(n / 100, 0.25));
+    maxlag = Math.max(0, Math.min(maxlag, Math.floor((n - kdet - 5) / 2)));
+    const dy = diff(y);
+    const build = (L, start) => {
+      const Y = [], X = [];
+      for (let t = start; t < n; t++) {
+        const row = [y[t - 1]]; for (let i = 1; i <= L; i++) row.push(dy[t - 1 - i]);
+        if (reg !== 'n') row.push(1); if (reg === 'ct') row.push(t);
+        Y.push(dy[t - 1]); X.push(row);
+      }
+      return { Y, X };
+    };
+    let L = maxlag;
+    if (opts.autolag !== false) {
+      let best = Infinity; const start = maxlag + 1;
+      for (let l = 0; l <= maxlag; l++) {
+        const { Y, X } = build(l, start); const r = ols(Y, X);
+        const ic = opts.ic === 'BIC' ? r.bic : r.aic; if (ic < best - 1e-12) { best = ic; L = l; }
+      }
+    }
+    const { Y, X } = build(L, L + 1); const r = ols(Y, X);
+    const stat = r.t[0], nobs = Y.length, N = opts.N || 1;
+    const cv = mkCrit(N, N > 1 ? 'c' : reg, nobs);
+    return { stat, p: N === 1 ? mkP(stat, reg) : NaN, lags: L, nobs, cv, gamma: r.b[0], reg };
+  }
+  function ppTest(y, reg = 'c', lags = null) {
+    const n = y.length, Y = [], X = [];
+    for (let t = 1; t < n; t++) { const row = [y[t - 1]]; if (reg !== 'n') row.push(1); if (reg === 'ct') row.push(t); Y.push(y[t]); X.push(row); }
+    const r = ols(Y, X), T = Y.length, u = r.resid;
+    const l = lags != null ? lags : Math.floor(4 * Math.pow(T / 100, 2 / 9));
+    let g0 = 0; for (const e of u) g0 += e * e; g0 /= T; let lr = g0;
+    for (let j = 1; j <= l; j++) { let g = 0; for (let t = j; t < T; t++) g += u[t] * u[t - j]; g /= T; lr += 2 * (1 - j / (l + 1)) * g; }
+    const s2 = r.ssr / (T - X[0].length), se = r.se[0], trho = (r.b[0] - 1) / se;
+    const Zt = Math.sqrt(g0 / lr) * trho - 0.5 * (lr - g0) / Math.sqrt(lr) * (T * se / Math.sqrt(s2));
+    const Za = T * (r.b[0] - 1) - 0.5 * (T * T * se * se / s2) * (lr - g0);
+    return { stat: Zt, Za, p: mkP(Zt, reg), cv: mkCrit(1, reg, T), lags: l, nobs: T, rho: r.b[0], reg };
+  }
+  const KPSS_CV = { c: [0.347, 0.463, 0.574, 0.739], ct: [0.119, 0.146, 0.176, 0.216] }; // 10,5,2.5,1 %
+  function kpssTest(y, reg = 'c', lags = null) {
+    const n = y.length, X = y.map((_, t) => (reg === 'ct' ? [1, t] : [1]));
+    const e = ols(y, X).resid;
+    let l = lags != null ? lags : Math.ceil(12 * Math.pow(n / 100, 0.25)); l = Math.min(l, n - 1);
+    let S = 0, eta = 0; for (const v of e) { S += v; eta += S * S; } eta /= n * n;
+    let s2 = 0; for (const v of e) s2 += v * v; s2 /= n;
+    for (let j = 1; j <= l; j++) { let g = 0; for (let t = j; t < n; t++) g += e[t] * e[t - j]; g /= n; s2 += 2 * (1 - j / (l + 1)) * g; }
+    const stat = eta / s2, cv = KPSS_CV[reg];
+    const ip = interpP(stat, cv, [0.10, 0.05, 0.025, 0.01], false);
+    return { stat, cv, p: ip.p, ptxt: ip.txt, lags: l, nobs: n, reg };
+  }
+  function kpssCvAt(alpha, reg) { const cv = KPSS_CV[reg]; return alpha <= 0.01 ? cv[3] : alpha <= 0.025 ? cv[2] : alpha <= 0.05 ? cv[1] : cv[0]; }
+
+  // ---------- optimisation ----------
+  function nelderMead(f, x0, opt = {}) {
+    const n = x0.length; if (n === 0) return { x: [], f: f([]) };
+    const maxIt = opt.maxIter || 400 * n, tol = opt.tol || 1e-10;
+    const step = opt.step || x0.map(v => (Math.abs(v) > 1e-8 ? 0.1 * Math.abs(v) : 0.05));
+    let S = [x0.slice()]; for (let i = 0; i < n; i++) { const x = x0.slice(); x[i] += step[i]; S.push(x); }
+    let F = S.map(f);
+    for (let it = 0; it < maxIt; it++) {
+      const idx = range(n + 1).sort((a, b) => F[a] - F[b]); S = idx.map(i => S[i]); F = idx.map(i => F[i]);
+      if (Math.abs(F[n] - F[0]) <= tol * (Math.abs(F[0]) + 1e-10)) {
+        let md = 0; for (let i = 1; i <= n; i++) for (let j = 0; j < n; j++) md = Math.max(md, Math.abs(S[i][j] - S[0][j]));
+        if (md < 1e-7) break;
+      }
+      const xo = new Array(n).fill(0); for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) xo[j] += S[i][j] / n;
+      const xr = xo.map((v, j) => v + (v - S[n][j])), fr = f(xr);
+      if (fr < F[0]) { const xe = xo.map((v, j) => v + 2 * (v - S[n][j])), fe = f(xe); if (fe < fr) { S[n] = xe; F[n] = fe; } else { S[n] = xr; F[n] = fr; } }
+      else if (fr < F[n - 1]) { S[n] = xr; F[n] = fr; }
+      else {
+        const xc = fr < F[n] ? xo.map((v, j) => v + 0.5 * (xr[j] - v)) : xo.map((v, j) => v + 0.5 * (S[n][j] - v)); const fc = f(xc);
+        if (fc < Math.min(fr, F[n])) { S[n] = xc; F[n] = fc; }
+        else { for (let i = 1; i <= n; i++) { S[i] = S[i].map((v, j) => S[0][j] + 0.5 * (v - S[0][j])); F[i] = f(S[i]); } }
+      }
+    }
+    let bi = 0; for (let i = 1; i <= n; i++) if (F[i] < F[bi]) bi = i;
+    return { x: S[bi], f: F[bi] };
+  }
+  function minimize(f, x0, step, restarts = 3) {
+    let res = nelderMead(f, x0, { step });
+    for (let r = 0; r < restarts; r++) {
+      const st = (step || x0.map(() => 0.05)).map(s => s * Math.pow(0.5, r + 1));
+      const nr = nelderMead(f, res.x, { step: st });
+      const imp = res.f - nr.f; if (nr.f <= res.f) res = nr;
+      if (imp < 1e-9) break;
+    }
+    return res;
+  }
+  function hessian(f, x) {
+    const n = x.length, H = zeros(n, n), h = x.map(v => 1e-4 * Math.max(Math.abs(v), 1e-2)), f0 = f(x);
+    const at = (i, di, j, dj) => { const y = x.slice(); y[i] += di; if (j != null) y[j] += dj; return f(y); };
+    for (let i = 0; i < n; i++) {
+      H[i][i] = (at(i, h[i]) - 2 * f0 + at(i, -h[i])) / (h[i] * h[i]);
+      for (let j = i + 1; j < n; j++) {
+        H[i][j] = H[j][i] = (at(i, h[i], j, h[j]) - at(i, h[i], j, -h[j]) - at(i, -h[i], j, h[j]) + at(i, -h[i], j, -h[j])) / (4 * h[i] * h[j]);
+      }
+    }
+    return H;
+  }
+  function seFromHessian(f, x) {
+    try { const C = inv(hessian(f, x)); return x.map((_, i) => (C[i][i] > 0 ? Math.sqrt(C[i][i]) : NaN)); }
+    catch (e) { return x.map(() => NaN); }
+  }
+
+  // ---------- polynomials ----------
+  function polyMul(a, b) { const c = new Array(a.length + b.length - 1).fill(0); for (let i = 0; i < a.length; i++) for (let j = 0; j < b.length; j++) c[i + j] += a[i] * b[j]; return c; }
+  // roots of 1 + c1 z + ... + ck z^k all outside unit circle?
+  function rootsOutside(c) {
+    const k = c.length; if (k === 0) return true;
+    if (k === 1) return Math.abs(c[0]) < 0.9995;
+    const C = zeros(k, k); for (let j = 0; j < k; j++) C[0][j] = -c[j]; for (let i = 1; i < k; i++) C[i][i - 1] = 1;
+    try { return eigGeneral(C).every(e => Math.hypot(e.re, e.im) < 0.9995); } catch (e) { return false; }
+  }
+  function diffPoly(d, D, s) { let p = [1]; for (let i = 0; i < d; i++) p = polyMul(p, [1, -1]); for (let i = 0; i < D; i++) { const q = new Array(s + 1).fill(0); q[0] = 1; q[s] = -1; p = polyMul(p, q); } return p; }
+  function applyPoly(poly, y) { const k = poly.length - 1, out = []; for (let t = k; t < y.length; t++) { let v = 0; for (let i = 0; i <= k; i++) v += poly[i] * y[t - i]; out.push(v); } return out; }
+
+  // ---------- ARIMA / SARIMA (CSS-ML) ----------
+  function arimaPolys(theta, sp) {
+    let i = 0; const phi = theta.slice(i, i += sp.p), th = theta.slice(i, i += sp.q), PHI = theta.slice(i, i += sp.P), TH = theta.slice(i, i += sp.Q);
+    const mu = sp.c ? theta[i] : 0;
+    const a1 = [1, ...phi.map(v => -v)], A = new Array(sp.s * sp.P + 1).fill(0); A[0] = 1; PHI.forEach((v, j) => (A[(j + 1) * sp.s] = -v));
+    const m1 = [1, ...th], M = new Array(sp.s * sp.Q + 1).fill(0); M[0] = 1; TH.forEach((v, j) => (M[(j + 1) * sp.s] = v));
+    return { a: polyMul(a1, A), m: polyMul(m1, M), mu, phi, th, PHI, TH };
+  }
+  function cssResid(w, a, m, mu) {
+    const n = w.length, pa = a.length - 1, qm = m.length - 1, e = new Array(n).fill(0); let ssr = 0, cnt = 0;
+    for (let t = pa; t < n; t++) {
+      let v = 0; for (let i = 0; i <= pa; i++) v += a[i] * (w[t - i] - mu);
+      for (let j = 1; j <= qm; j++) if (t - j >= pa) v -= m[j] * e[t - j];
+      e[t] = v; ssr += v * v; cnt++;
+    }
+    return { e, ssr, cnt, start: pa };
+  }
+  function arimaFit(y, sp) {
+    const dp = diffPoly(sp.d, sp.D, sp.s), w = applyPoly(dp, y);
+    const k = sp.p + sp.q + sp.P + sp.Q + (sp.c ? 1 : 0);
+    const minObs = (sp.p + sp.s * sp.P) + 8 + k;
+    if (w.length < minObs) throw new Error('TOO_SHORT');
+    const sdw = std(w) || 1;
+    const nll = th => {
+      const P = arimaPolys(th, sp);
+      if (!rootsOutside(P.phi.map(v => -v)) || !rootsOutside(P.PHI.map(v => -v)) || !rootsOutside(P.th) || !rootsOutside(P.TH)) return 1e12;
+      const r = cssResid(w, P.a, P.m, P.mu); if (!(r.ssr > 0)) return 1e12;
+      return r.cnt / 2 * (Math.log(2 * Math.PI) + Math.log(r.ssr / r.cnt) + 1);
+    };
+    const x0 = new Array(k).fill(0); if (sp.c) x0[k - 1] = mean(w);
+    const step = x0.map((_, i) => (sp.c && i === k - 1 ? 0.2 * sdw : 0.1));
+    const opt = k > 0 ? minimize(nll, x0, step, 3) : { x: [], f: nll([]) };
+    const P = arimaPolys(opt.x, sp), r = cssResid(w, P.a, P.m, P.mu);
+    const sigma2 = r.ssr / r.cnt, ll = -opt.f, npar = k + 1, neff = r.cnt;
+    const se = k > 0 ? seFromHessian(nll, opt.x) : [];
+    const names = [];
+    for (let i = 1; i <= sp.p; i++) names.push('AR(' + i + ')');
+    for (let i = 1; i <= sp.q; i++) names.push('MA(' + i + ')');
+    for (let i = 1; i <= sp.P; i++) names.push('SAR(' + i * sp.s + ')');
+    for (let i = 1; i <= sp.Q; i++) names.push('SMA(' + i * sp.s + ')');
+    if (sp.c) names.push(sp.d + sp.D > 0 ? 'Drift (μ)' : 'Constant (μ)');
+    const coefs = opt.x.map((v, i) => { const z = v / se[i]; return { name: names[i], coef: v, se: se[i], z, p: pNorm(z), lo: v - 1.96 * se[i], hi: v + 1.96 * se[i] }; });
+    return {
+      sp, dp, w, x: opt.x, coefs, polys: P, e: r.e, start: r.start, sigma2, ll, neff, npar,
+      aic: -2 * ll + 2 * npar, bic: -2 * ll + npar * Math.log(neff), aicc: -2 * ll + 2 * npar + (2 * npar * (npar + 1)) / Math.max(neff - npar - 1, 1)
+    };
+  }
+  function arimaForecast(y, fit, H) {
+    const { a, m, mu } = fit.polys, dp = fit.dp, off = dp.length - 1, n = y.length;
+    const Astar = polyMul(a, dp), c = mu * sum(a);
+    const eY = new Array(n).fill(0); for (let t = 0; t < fit.e.length; t++) if (t >= fit.start) eY[t + off] = fit.e[t];
+    const yy = y.slice(), mean_ = [];
+    for (let h = 1; h <= H; h++) {
+      const t = n - 1 + h; let v = c;
+      for (let i = 1; i < Astar.length; i++) v -= Astar[i] * (t - i >= 0 ? yy[t - i] : 0);
+      for (let j = 1; j < m.length; j++) if (t - j < n && t - j >= 0) v += m[j] * eY[t - j];
+      yy.push(v); mean_.push(v);
+    }
+    const psi = [1];
+    for (let j = 1; j < H; j++) { let v = j < m.length ? m[j] : 0; for (let i = 1; i <= j && i < Astar.length; i++) v -= Astar[i] * psi[j - i]; psi.push(v); }
+    const se = []; let acc = 0; for (let h = 0; h < H; h++) { acc += psi[h] * psi[h]; se.push(Math.sqrt(fit.sigma2 * acc)); }
+    const fitted = y.map((v, t) => (t >= off + fit.start ? v - eY[t] : null));
+    const resid = y.map((v, t) => (t >= off + fit.start ? eY[t] : null));
+    return { mean: mean_, se, fitted, resid, psi };
+  }
+
+  // ---------- VAR ----------
+  function varFit(Y, p, start) {
+    const T = Y.length, k = Y[0].length; start = start == null ? p : start;
+    const X = [], Yd = [];
+    for (let t = start; t < T; t++) { const row = [1]; for (let l = 1; l <= p; l++) for (let j = 0; j < k; j++) row.push(Y[t - l][j]); X.push(row); Yd.push(Y[t].slice()); }
+    const n = X.length, m = X[0].length;
+    if (n <= m + 2) throw new Error('TOO_SHORT');
+    const XtXi = inv(mm(tr(X), X)), B = mm(mm(XtXi, tr(X)), Yd), fitted = mm(X, B);
+    const U = Yd.map((r, i) => r.map((v, j) => v - fitted[i][j]));
+    const UtU = mm(tr(U), U), SigML = mscale(UtU, 1 / n), Sig = mscale(UtU, 1 / (n - m));
+    const ld = logdet(SigML), np = k * m;
+    const A = range(p).map(l => range(k).map(i => range(k).map(j => B[1 + l * k + j][i])));
+    const c = range(k).map(i => B[0][i]);
+    const eqs = range(k).map(i => {
+      const b = B.map(r => r[i]), s2 = Sig[i][i], se = b.map((_, j) => Math.sqrt(XtXi[j][j] * s2)), t = b.map((v, j) => v / se[j]), pv = t.map(v => pT(v, n - m));
+      const yi = Yd.map(r => r[i]), ym = mean(yi); let sst = 0, ssr = 0; for (let r = 0; r < n; r++) { sst += (yi[r] - ym) ** 2; ssr += U[r][i] ** 2; }
+      const r2 = 1 - ssr / sst, adj = 1 - (1 - r2) * (n - 1) / (n - m), F = ((sst - ssr) / (m - 1)) / (ssr / (n - m));
+      let dw = 0; for (let r = 1; r < n; r++) dw += (U[r][i] - U[r - 1][i]) ** 2;
+      return { b, se, t, p: pv, r2, adj, F, Fp: pF(F, m - 1, n - m), ssr, ser: Math.sqrt(ssr / (n - m)), dw: dw / ssr, resid: U.map(r => r[i]), fitted: fitted.map(r => r[i]), actual: yi };
+    });
+    return {
+      p, k, n, m, X, Yd, B, U, Sig, SigML, A, c, eqs, start,
+      ll: -n * k / 2 * (1 + Math.log(2 * Math.PI)) - n / 2 * ld,
+      aic: ld + 2 * np / n, bic: ld + Math.log(n) * np / n, hq: ld + 2 * Math.log(Math.log(n)) * np / n,
+      fpe: Math.pow((n + m) / (n - m), k) * Math.exp(ld), detSig: Math.exp(ld)
+    };
+  }
+  function varLagSelect(Y, maxp) {
+    const out = [];
+    for (let p = 1; p <= maxp; p++) { try { const f = varFit(Y, p, maxp); out.push({ p, ll: f.ll, aic: f.aic, bic: f.bic, hq: f.hq, fpe: f.fpe }); } catch (e) { break; } }
+    const best = c => out.reduce((b, r) => (r[c] < b[c] ? r : b), out[0]).p;
+    return { table: out, best: { aic: best('aic'), bic: best('bic'), hq: best('hq'), fpe: best('fpe') } };
+  }
+  function companionEig(A) {
+    const p = A.length, k = A[0].length, K = k * p, C = zeros(K, K);
+    for (let l = 0; l < p; l++) for (let i = 0; i < k; i++) for (let j = 0; j < k; j++) C[i][l * k + j] = A[l][i][j];
+    for (let i = k; i < K; i++) C[i][i - k] = 1;
+    return eigGeneral(C).map(e => ({ ...e, mod: Math.hypot(e.re, e.im) })).sort((a, b) => b.mod - a.mod);
+  }
+  function granger(fit) {
+    const { k, p, X, Yd, n, m } = fit, out = [];
+    for (let i = 0; i < k; i++) for (let c = 0; c < k; c++) {
+      if (c === i) continue;
+      const drop = new Set(range(p).map(l => 1 + l * k + c));
+      const Xr = X.map(r => r.filter((_, j) => !drop.has(j)));
+      const rr = ols(Yd.map(r => r[i]), Xr), ssru = fit.eqs[i].ssr;
+      const F = ((rr.ssr - ssru) / p) / (ssru / (n - m));
+      out.push({ cause: c, effect: i, F, df1: p, df2: n - m, p: pF(F, p, n - m) });
+    }
+    return out;
+  }
+  function maRep(A, H) {
+    const p = A.length, k = A[0].length, Phi = [eye(k)];
+    for (let h = 1; h <= H; h++) { let M = zeros(k, k); for (let l = 1; l <= Math.min(h, p); l++) M = madd(M, mm(Phi[h - l], A[l - 1])); Phi.push(M); }
+    return Phi;
+  }
+  function irfFrom(A, Sig, H, type) {
+    const Phi = maRep(A, H);
+    if (type === 'gen') return Phi.map(F => mm(F, Sig).map(row => row.map((v, j) => v / Math.sqrt(Sig[j][j]))));
+    const P = chol(Sig); return Phi.map(F => mm(F, P));
+  }
+  function cumulate(Th) { const out = []; let acc = null; for (const M of Th) { acc = acc ? madd(acc, M) : M.map(r => r.slice()); out.push(acc.map(r => r.slice())); } return out; }
+  function fevd(A, Sig, H) {
+    const Th = irfFrom(A, Sig, H, 'orth'), k = Sig.length, out = [];
+    const acc = zeros(k, k);
+    for (let h = 0; h < H; h++) {
+      for (let i = 0; i < k; i++) for (let j = 0; j < k; j++) acc[i][j] += Th[h][i][j] ** 2;
+      out.push(acc.map(r => { const s = sum(r); return r.map(v => v / s); }));
+    }
+    return out; // out[h][resp][shock], h=0 -> 1-step
+  }
+  function rng(seed) {
+    let a = seed >>> 0;
+    const u = () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    let spare = null;
+    const n = () => { if (spare !== null) { const s = spare; spare = null; return s; } let x, y, r; do { x = 2 * u() - 1; y = 2 * u() - 1; r = x * x + y * y; } while (r >= 1 || r === 0); const f = Math.sqrt(-2 * Math.log(r) / r); spare = y * f; return x * f; };
+    return { u, n };
+  }
+  function irfBootstrap(Y, fit, H, type, cumulative, reps, seed = 12345) {
+    const R = rng(seed), { p, k, U, c, A } = fit, T = Y.length, nU = U.length;
+    const um = range(k).map(j => mean(U.map(r => r[j])));
+    const draws = [];
+    for (let b = 0; b < reps; b++) {
+      const Ys = Y.slice(0, p).map(r => r.slice());
+      for (let t = p; t < T; t++) {
+        const u = U[Math.floor(R.u() * nU)];
+        const y = range(k).map(i => { let v = c[i] + u[i] - um[i]; for (let l = 0; l < p; l++) for (let j = 0; j < k; j++) v += A[l][i][j] * Ys[t - 1 - l][j]; return v; });
+        Ys.push(y);
+      }
+      try { const f = varFit(Ys, p); let Th = irfFrom(f.A, f.Sig, H, type); if (cumulative) Th = cumulate(Th); draws.push(Th); } catch (e) { /* skip */ }
+    }
+    const q = (arr, pr) => { const s = arr.slice().sort((a, b) => a - b); const idx = pr * (s.length - 1), lo = Math.floor(idx), hi = Math.ceil(idx); return s[lo] + (s[hi] - s[lo]) * (idx - lo); };
+    const lo = [], hi = [];
+    for (let h = 0; h <= H; h++) {
+      lo.push(range(k).map(i => range(k).map(j => q(draws.map(D => D[h][i][j]), 0.025))));
+      hi.push(range(k).map(i => range(k).map(j => q(draws.map(D => D[h][i][j]), 0.975))));
+    }
+    return { lo, hi, n: draws.length };
+  }
+
+  // ---------- Johansen ----------
+  const JOH_TRACE = [[2.7055, 3.8415, 6.6349], [13.4294, 15.4943, 19.9349], [27.0669, 29.7961, 35.4628], [44.4929, 47.8545, 54.6815], [65.8202, 69.8189, 77.8202], [91.109, 95.7542, 104.9637]];
+  const JOH_MAX = [[2.7055, 3.8415, 6.6349], [12.2971, 14.2639, 18.52], [18.8928, 21.1314, 25.865], [25.1236, 27.5858, 32.7172], [31.2379, 33.8777, 39.3693], [37.2786, 40.0763, 45.8662]];
+  function residOn(Z, Z2) { const B = mm(inv(mm(tr(Z2), Z2)), mm(tr(Z2), Z)); const F = mm(Z2, B); return Z.map((r, i) => r.map((v, j) => v - F[i][j])); }
+  function johansen(Y, p, alpha = 0.05) {
+    const T = Y.length, k = Y[0].length; if (k > 6) throw new Error('JOH_MAX6');
+    const Z0 = [], Z1 = [], Z2 = [];
+    for (let t = p; t < T; t++) {
+      Z0.push(range(k).map(j => Y[t][j] - Y[t - 1][j])); Z1.push(Y[t - 1].slice());
+      const r = []; for (let l = 1; l < p; l++) for (let j = 0; j < k; j++) r.push(Y[t - l][j] - Y[t - l - 1][j]); r.push(1); Z2.push(r);
+    }
+    const n = Z0.length, R0 = residOn(Z0, Z2), R1 = residOn(Z1, Z2);
+    const S00 = mscale(mm(tr(R0), R0), 1 / n), S11 = mscale(mm(tr(R1), R1), 1 / n), S01 = mscale(mm(tr(R0), R1), 1 / n), S10 = tr(S01);
+    const Lc = chol(S11), Li = inv(Lc);
+    let M = mm(mm(mm(mm(Li, S10), inv(S00)), S01), tr(Li)); M = madd(M, tr(M)).map(r => r.map(v => v / 2));
+    const E = eigSym(M), lam = E.values.map(v => Math.min(Math.max(v, 0), 0.999999));
+    const beta = mm(tr(Li), E.vectors); // columns
+    const ci = alpha <= 0.01 ? 2 : alpha <= 0.05 ? 1 : 0;
+    const trace = [], maxe = [];
+    for (let r = 0; r < k; r++) {
+      let s = 0; for (let i = r; i < k; i++) s += -n * Math.log(1 - lam[i]);
+      trace.push({ r, eig: lam[r], stat: s, cv: JOH_TRACE[k - r - 1] });
+      maxe.push({ r, eig: lam[r], stat: -n * Math.log(1 - lam[r]), cv: JOH_MAX[k - r - 1] });
+    }
+    let rankT = k; for (let r = 0; r < k; r++) if (trace[r].stat < trace[r].cv[ci]) { rankT = r; break; }
+    let rankM = k; for (let r = 0; r < k; r++) if (maxe[r].stat < maxe[r].cv[ci]) { rankM = r; break; }
+    return { n, k, p, lam, beta, trace, maxe, rankT, rankM, S00, S11, S01, ci };
+  }
+  function normBeta(J, r) {
+    const b = J.beta.map(row => row.slice(0, r)); const top = b.slice(0, r);
+    return mm(b, inv(top)); // k x r with identity on top
+  }
+  function vecmFit(Y, p, J, r) {
+    const T = Y.length, k = Y[0].length, beta = normBeta(J, r);
+    const X = [], Yd = [], ect = [];
+    for (let t = p; t < T; t++) {
+      const e = range(r).map(c => { let s = 0; for (let j = 0; j < k; j++) s += beta[j][c] * Y[t - 1][j]; return s; });
+      const row = [...e]; for (let l = 1; l < p; l++) for (let j = 0; j < k; j++) row.push(Y[t - l][j] - Y[t - l - 1][j]); row.push(1);
+      X.push(row); Yd.push(range(k).map(j => Y[t][j] - Y[t - 1][j])); ect.push(e);
+    }
+    const eqs = range(k).map(i => ols(Yd.map(rw => rw[i]), X));
+    return { beta, eqs, ect, Yd, r, p, k, n: X.length };
+  }
+
+  // ---------- GARCH family ----------
+  const EZ = Math.sqrt(2 / Math.PI);
+  function garchUnpack(th, sp) {
+    let i = 0; const mu = sp.mean === 'const' ? th[i++] : 0; const omega = th[i++];
+    const alpha = th.slice(i, i += sp.q);
+    const gamma = sp.type === 'egarch' || sp.type === 'gjr' ? th.slice(i, i += sp.q) : [];
+    const beta = sp.type === 'arch' ? [] : th.slice(i, i += sp.p);
+    return { mu, omega, alpha, gamma, beta };
+  }
+  function garchPersist(P, type) { if (type === 'egarch') return sum(P.beta); return sum(P.alpha) + sum(P.beta) + (type === 'gjr' ? 0.5 * sum(P.gamma) : 0); }
+  function garchFilter(th, r, sp) {
+    const P = garchUnpack(th, sp), { type } = sp;
+    if (type === 'egarch') { if (Math.abs(sum(P.beta)) >= 0.9999) return null; }
+    else {
+      if (!(P.omega > 0)) return null;
+      if (P.alpha.some(v => v < 0) || P.beta.some(v => v < 0)) return null;
+      if (type === 'gjr' && P.alpha.some((v, i) => v + P.gamma[i] < 0)) return null;
+      if (garchPersist(P, type) >= 0.9999) return null;
+    }
+    const n = r.length, e = r.map(v => v - P.mu); let v0 = 0; for (const x of e) v0 += x * x; v0 /= n;
+    const h = new Array(n); let nll = 0; const lv0 = Math.log(v0);
+    for (let t = 0; t < n; t++) {
+      let ht;
+      if (type === 'egarch') {
+        let lh = P.omega;
+        for (let i = 0; i < sp.q; i++) { const s = t - 1 - i; if (s >= 0) { const z = e[s] / Math.sqrt(h[s]); lh += P.alpha[i] * (Math.abs(z) - EZ) + P.gamma[i] * z; } }
+        for (let j = 0; j < P.beta.length; j++) { const s = t - 1 - j; lh += P.beta[j] * (s >= 0 ? Math.log(h[s]) : lv0); }
+        if (lh > 50) return null; ht = Math.exp(lh);
+      } else {
+        ht = P.omega;
+        for (let i = 0; i < sp.q; i++) {
+          const s = t - 1 - i;
+          if (s >= 0) ht += (P.alpha[i] + (type === 'gjr' && e[s] < 0 ? P.gamma[i] : 0)) * e[s] * e[s];
+          else ht += (P.alpha[i] + (type === 'gjr' ? 0.5 * P.gamma[i] : 0)) * v0;
+        }
+        for (let j = 0; j < P.beta.length; j++) { const s = t - 1 - j; ht += P.beta[j] * (s >= 0 ? h[s] : v0); }
+      }
+      if (!(ht > 1e-12) || !isFinite(ht)) return null;
+      h[t] = ht; nll += 0.5 * (Math.log(2 * Math.PI) + Math.log(ht) + e[t] * e[t] / ht);
+    }
+    return { nll, h, e, P, v0 };
+  }
+  function garchFit(r, sp) {
+    const v = variance(r), m = mean(r), x0 = [], step = [];
+    if (sp.mean === 'const') { x0.push(m); step.push(0.1 * Math.sqrt(v)); }
+    const q = sp.q, p = sp.type === 'arch' ? 0 : sp.p;
+    if (sp.type === 'egarch') {
+      x0.push(Math.log(v) * 0.05); step.push(0.1);
+      for (let i = 0; i < q; i++) { x0.push(0.15 / q); step.push(0.05); }
+      for (let i = 0; i < q; i++) { x0.push(-0.05 / q); step.push(0.05); }
+      for (let j = 0; j < p; j++) { x0.push(0.94 / p); step.push(0.02); }
+    } else if (sp.type === 'arch') {
+      x0.push(0.7 * v); step.push(0.3 * v); for (let i = 0; i < q; i++) { x0.push(0.3 / q); step.push(0.1); }
+    } else {
+      x0.push(0.05 * v); step.push(0.03 * v);
+      for (let i = 0; i < q; i++) { x0.push((sp.type === 'gjr' ? 0.03 : 0.08) / q); step.push(0.03); }
+      if (sp.type === 'gjr') for (let i = 0; i < q; i++) { x0.push(0.08 / q); step.push(0.04); }
+      for (let j = 0; j < p; j++) { x0.push(0.87 / p); step.push(0.03); }
+    }
+    const f = th => { const o = garchFilter(th, r, sp); return o ? o.nll : 1e10; };
+    const opt = minimize(f, x0, step, 4);
+    const out = garchFilter(opt.x, r, sp);
+    if (!out) throw new Error('GARCH_FAIL');
+    const se = seFromHessian(f, opt.x);
+    const names = []; if (sp.mean === 'const') names.push('μ (mean)'); names.push('ω (omega)');
+    for (let i = 1; i <= q; i++) names.push('α' + i + ' (ARCH)');
+    if (sp.type === 'egarch' || sp.type === 'gjr') for (let i = 1; i <= q; i++) names.push('γ' + i + (sp.type === 'gjr' ? ' (GJR leverage)' : ' (asymmetry)'));
+    for (let j = 1; j <= p; j++) names.push('β' + j + ' (GARCH)');
+    const coefs = opt.x.map((val, i) => { const z = val / se[i]; return { name: names[i], coef: val, se: se[i], z, p: pNorm(z) }; });
+    const k = opt.x.length, n = r.length, ll = -out.nll;
+    const pers = garchPersist(out.P, sp.type);
+    const uncond = sp.type === 'egarch' ? Math.exp(out.P.omega / (1 - sum(out.P.beta))) : out.P.omega / (1 - pers);
+    return { sp, x: opt.x, coefs, ll, k, n, aic: -2 * ll + 2 * k, bic: -2 * ll + k * Math.log(n), h: out.h, e: out.e, P: out.P, pers, uncond, halfLife: pers > 0 && pers < 1 ? Math.log(0.5) / Math.log(pers) : NaN, z: out.e.map((x, t) => x / Math.sqrt(out.h[t])) };
+  }
+  function garchForecast(fit, H) {
+    const { P, sp, e, h } = fit, n = e.length, E2 = e.map(v => v * v), hh = h.slice(), lh = h.map(Math.log), out = [];
+    for (let k = 1; k <= H; k++) {
+      const t = n - 1 + k; let ht;
+      if (sp.type === 'egarch') {
+        let v = P.omega;
+        for (let i = 0; i < sp.q; i++) { const s = t - 1 - i; if (s <= n - 1) { const z = e[s] / Math.sqrt(h[s]); v += P.alpha[i] * (Math.abs(z) - EZ) + P.gamma[i] * z; } }
+        for (let j = 0; j < P.beta.length; j++) v += P.beta[j] * lh[t - 1 - j];
+        lh.push(v); ht = Math.exp(v);
+      } else {
+        ht = P.omega;
+        for (let i = 0; i < sp.q; i++) {
+          const s = t - 1 - i;
+          if (s <= n - 1) ht += (P.alpha[i] + (sp.type === 'gjr' && e[s] < 0 ? P.gamma[i] : 0)) * E2[s];
+          else ht += (P.alpha[i] + (sp.type === 'gjr' ? 0.5 * P.gamma[i] : 0)) * hh[s];
+        }
+        for (let j = 0; j < P.beta.length; j++) ht += P.beta[j] * hh[t - 1 - j];
+      }
+      hh.push(ht); out.push(ht);
+    }
+    return out;
+  }
+  function newsImpact(fit, sbar) {
+    const { P, sp } = fit, v = sbar * sbar, pts = [];
+    for (let i = -40; i <= 40; i++) {
+      const e = (i / 10) * sbar; let h;
+      if (sp.type === 'egarch') h = Math.exp(P.omega + (P.alpha[0] || 0) * (Math.abs(e) / sbar - EZ) + (P.gamma[0] || 0) * e / sbar + sum(P.beta) * Math.log(v));
+      else h = P.omega + ((P.alpha[0] || 0) + (sp.type === 'gjr' && e < 0 ? P.gamma[0] : 0)) * e * e + sum(P.beta) * v;
+      pts.push({ x: e, y: h });
+    }
+    return pts;
+  }
+
+  // ---------- transforms ----------
+  function transformCols(D, names, how) {
+    const cols = {}; let labels = D.labels.slice();
+    for (const nm of names) {
+      let x = D.cols[nm].slice();
+      if ((how === 'log' || how === 'logdiff') && x.some(v => !(v > 0))) throw new Error('LOG_NONPOS:' + nm);
+      if (how === 'log') x = x.map(Math.log);
+      if (how === 'diff') x = diff(x);
+      if (how === 'logdiff') x = diff(x.map(Math.log)).map(v => 100 * v);
+      cols[nm] = x;
+    }
+    if (how === 'diff' || how === 'logdiff') labels = labels.slice(1);
+    return { labels, cols, names };
+  }
+  const toRows = (cols, names) => cols[names[0]].map((_, t) => names.map(nm => cols[nm][t]));
+
+  // ======================= MODULE RUNNERS =======================
+  function runUnitRoot(D, s) {
+    const alpha = +s.alpha || 0.05, spec = s.spec || 'c', ic = s.ic || 'AIC';
+    const items = D.names.map(name => {
+      const y = D.cols[name], dy = diff(y);
+      if (y.length < 20) throw new Error('TOO_SHORT');
+      const one = (x, reg) => ({ adf: adfTest(x, reg, { ic }), pp: ppTest(x, reg), kpss: kpssTest(x, reg) });
+      const lv = one(y, spec), df = one(dy, 'c');
+      const st = (R, reg) => ({ adf: R.adf.p < alpha, pp: R.pp.p < alpha, kpss: R.kpss.stat < kpssCvAt(alpha, reg) });
+      const sl = st(lv, spec), sd = st(df, 'c');
+      const ord = t => (sl[t] ? 0 : sd[t] ? 1 : 2);
+      const o = { adf: ord('adf'), pp: ord('pp'), kpss: ord('kpss') };
+      const ov = [o.adf, o.pp, o.kpss].sort()[1];
+      return { name, level: lv, diff: df, stL: sl, stD: sd, order: o, overall: ov, desc: describe(y), acfL: acf(y, Math.min(24, Math.floor(y.length / 4))), acfD: acf(dy, Math.min(24, Math.floor(dy.length / 4))), y, dy };
+    });
+    return { items, alpha, spec, ic, labels: D.labels };
+  }
+
+  function runArima(D, s) {
+    const name = s.var, raw = D.cols[name];
+    if (s.log && raw.some(v => !(v > 0))) throw new Error('LOG_NONPOS:' + name);
+    const y = s.log ? raw.map(Math.log) : raw.slice();
+    const per = Math.max(1, +s.s || 1), seasonal = per > 1;
+    const base = { d: +s.d || 0, D: seasonal ? (+s.D || 0) : 0, s: per, c: !!s.constant };
+    let grid = null, sp;
+    if (s.auto) {
+      grid = [];
+      const Pm = seasonal ? 1 : 0;
+      for (let p = 0; p <= 2; p++) for (let q = 0; q <= 2; q++) for (let P = 0; P <= Pm; P++) for (let Q = 0; Q <= Pm; Q++) {
+        const cand = { ...base, p, q, P, Q };
+        try { const f = arimaFit(y, cand); grid.push({ sp: cand, aic: f.aic, bic: f.bic, aicc: f.aicc, ll: f.ll }); } catch (e) { /* skip */ }
+      }
+      if (!grid.length) throw new Error('TOO_SHORT');
+      grid.sort((a, b) => a.aic - b.aic); sp = grid[0].sp;
+    } else sp = { ...base, p: +s.p || 0, q: +s.q || 0, P: seasonal ? (+s.P || 0) : 0, Q: seasonal ? (+s.Q || 0) : 0 };
+    const fit = arimaFit(y, sp), H = Math.max(1, +s.h || 12);
+    const fc = arimaForecast(y, fit, H);
+    const back = v => (v == null ? null : s.log ? Math.exp(v) : v);
+    const fitted = fc.fitted.map(back), resid = fc.resid;
+    const fmean = fc.mean.map(back), flo = fc.mean.map((v, i) => back(v - 1.96 * fc.se[i])), fhi = fc.mean.map((v, i) => back(v + 1.96 * fc.se[i]));
+    const er = resid.filter(v => v != null);
+    const nar = sp.p + sp.q + sp.P + sp.Q;
+    const errs = raw.map((v, t) => (fitted[t] == null ? null : v - fitted[t])).filter(v => v != null);
+    const ape = raw.map((v, t) => (fitted[t] == null || v === 0 ? null : Math.abs((v - fitted[t]) / v))).filter(v => v != null);
+    const lagN = Math.min(Math.max(12, 2 * per), Math.floor(fit.w.length / 3));
+    return {
+      name, labels: D.labels, raw, log: !!s.log, sp, fit, grid: grid ? grid.slice(0, 10) : null, H,
+      fitted, resid, fmean, flo, fhi, fse: fc.se, w: fit.w,
+      acfW: acf(fit.w, lagN), pacfW: pacf(fit.w, lagN), acfR: acf(er, lagN),
+      lb: [ljungBox(er, Math.min(10, er.length - 2), nar), ljungBox(er, Math.min(20, er.length - 2), nar)],
+      jb: jarqueBera(er), archLM: archLM(er, 5), residMean: mean(er), er,
+      acc: { rmse: Math.sqrt(mean(errs.map(v => v * v))), mae: mean(errs.map(Math.abs)), mape: ape.length ? 100 * mean(ape) : NaN },
+      adfW: adfTest(fit.w, 'c', {})
+    };
+  }
+
+  function runCoint(D, s) {
+    const names = D.names, k = names.length; if (k < 2) throw new Error('NEED2');
+    const alpha = +s.alpha || 0.05, Y = toRows(D.cols, names), n = Y.length;
+    const ur = names.map(nm => { const y = D.cols[nm]; const a = adfTest(y, 'c', {}), b = adfTest(diff(y), 'c', {}); return { name: nm, lv: a, df: b, order: a.p < alpha ? 0 : b.p < alpha ? 1 : 2 }; });
+    // Engle-Granger
+    const yv = D.cols[names[0]], X = range(n).map(t => [1, ...names.slice(1).map(nm => D.cols[nm][t])]);
+    const lr = ols(yv, X);
+    const u = lr.resid, N = Math.min(k, 4);
+    const ad = adfTest(u, 'n', { N });
+    const egP = N === 2 ? { p: mkP(ad.stat, 'c', 2), txt: null } : interpP(ad.stat, ad.cv, [0.01, 0.05, 0.10], true);
+    if (N === 2) egP.txt = egP.p.toFixed(4);
+    const egCoint = ad.stat < ad.cv[alpha <= 0.01 ? 0 : alpha <= 0.05 ? 1 : 2];
+    // ECM
+    const L = Math.max(0, +s.eclag || 0), dY = names.map(nm => diff(D.cols[nm])); // dY[j][t-1] = y_t - y_{t-1}
+    const Ye = [], Xe = [], idx = [];
+    for (let t = L + 1; t < n; t++) {
+      const row = [1]; for (let j = 1; j < k; j++) row.push(dY[j][t - 1]);
+      row.push(u[t - 1]);
+      for (let l = 1; l <= L; l++) for (let j = 0; j < k; j++) row.push(dY[j][t - 1 - l]);
+      Ye.push(dY[0][t - 1]); Xe.push(row); idx.push(t);
+    }
+    const ecm = ols(Ye, Xe);
+    const ecmNames = ['Constant']; for (let j = 1; j < k; j++) ecmNames.push('Δ' + names[j]); ecmNames.push('ECT(-1)');
+    for (let l = 1; l <= L; l++) for (let j = 0; j < k; j++) ecmNames.push('Δ' + names[j] + '(-' + l + ')');
+    const gamma = ecm.b[k], hl = gamma < 0 && gamma > -2 ? Math.log(0.5) / Math.log(Math.abs(1 + gamma)) : NaN;
+    // Johansen
+    const jp = Math.max(1, +s.jlag || 2); let joh = null, johErr = null;
+    if (k <= 6) { try { joh = johansen(Y, jp, alpha); const r = Math.max(1, Math.min(joh.rankT, k - 1)); joh.useR = r; joh.betaN = normBeta(joh, r); const v = vecmFit(Y, jp, joh, r); joh.alphaEq = v.eqs.map(eq => range(r).map(c => ({ coef: eq.b[c], se: eq.se[c], t: eq.t[c], p: eq.p[c] }))); } catch (e) { johErr = e.message; } }
+    return {
+      names, labels: D.labels, cols: D.cols, ur, alpha,
+      eg: { lr, u, fitted: lr.fitted, adf: ad, p: egP, coint: egCoint, N },
+      ecm: { fit: ecm, names: ecmNames, gamma, hl, L, idx, gse: ecm.se[k], gp: ecm.p[k] },
+      joh, johErr, jp, acfU: acf(u, Math.min(20, Math.floor(n / 4)))
+    };
+  }
+
+  function runVar(D, s) {
+    const names = D.names, k = names.length; if (k < 2) throw new Error('NEED2');
+    const T0 = transformCols(D, names, s.transform || 'none'), Y = toRows(T0.cols, names);
+    const maxp = Math.max(1, Math.min(+s.maxlag || 8, Math.floor((Y.length - 10) / (k + 1))));
+    const sel = varLagSelect(Y, maxp);
+    let p = s.crit === 'fixed' ? Math.max(1, +s.lag || 2) : (sel.best[(s.crit || 'aic').toLowerCase()] || 1);
+    const out = { names, labels: T0.labels, transform: s.transform || 'none', sel, p, crit: s.crit || 'aic', mode: s.model || 'var', cols: T0.cols };
+    if (out.mode === 'vecm') {
+      const pp = p;
+      const J = johansen(Y, pp, 0.05);
+      let r = s.rank === 'auto' || !s.rank ? J.rankT : Math.min(+s.rank, k);
+      out.joh = J; out.rankAuto = J.rankT;
+      if (r === 0) { out.vecmNote = 'R0'; }
+      else if (r >= k) { out.vecmNote = 'RK'; }
+      else { out.vecm = vecmFit(Y, pp, J, r); out.vecm.lbl = T0.labels.slice(pp); out.r = r; out.p = pp; return out; }
+      // fallback: VAR in differences (r=0) or levels (r=k)
+      out.mode = 'var';
+      if (r === 0) { const dYc = transformCols({ labels: T0.labels, cols: T0.cols }, names, 'diff'); out.cols = dYc.cols; out.labels = dYc.labels; const Yd = toRows(dYc.cols, names); out.fit = varFit(Yd, Math.max(1, pp - 1)); out.p = Math.max(1, pp - 1); }
+      else { out.fit = varFit(Y, p); }
+    } else out.fit = varFit(Y, p);
+    out.p = out.fit.p;
+    out.granger = granger(out.fit);
+    out.roots = companionEig(out.fit.A);
+    const Sg = out.fit.Sig; out.corr = Sg.map((r, i) => r.map((v, j) => v / Math.sqrt(Sg[i][i] * Sg[j][j])));
+    out.diag = out.fit.eqs.map(eq => ({ lb: ljungBox(eq.resid, Math.min(10, eq.resid.length - 2), 0), jb: jarqueBera(eq.resid) }));
+    out.fitLabels = out.labels.slice(out.fit.start);
+    return out;
+  }
+
+  function runIrf(D, s) {
+    const names = D.names, k = names.length; if (k < 2) throw new Error('NEED2');
+    const T0 = transformCols(D, names, s.transform || 'none'), Y = toRows(T0.cols, names);
+    const maxp = Math.max(1, Math.min(+s.maxlag || 8, Math.floor((Y.length - 10) / (k + 1))));
+    const sel = varLagSelect(Y, maxp);
+    const p = s.crit === 'fixed' ? Math.max(1, +s.lag || 2) : (sel.best[(s.crit || 'aic').toLowerCase()] || 1);
+    const fit = varFit(Y, p), H = Math.max(1, Math.min(+s.horizon || 10, 60)), type = s.type || 'orth', cum = !!s.cumulative;
+    let irf = irfFrom(fit.A, fit.Sig, H, type); if (cum) irf = cumulate(irf);
+    const reps = Math.max(0, Math.min(+s.boot || 0, 2000));
+    const band = reps > 0 ? irfBootstrap(Y, fit, H, type, cum, reps) : null;
+    const fe = fevd(fit.A, fit.Sig, H);
+    const roots = companionEig(fit.A);
+    return { names, p, H, type, cum, irf, band, reps, fevd: fe, fit, roots, sel, transform: s.transform || 'none', crit: s.crit || 'aic', Sig: fit.Sig };
+  }
+
+  function runGarch(D, s) {
+    const name = s.var, raw = D.cols[name]; let r, labels = D.labels, isPrice = false;
+    if (s.transform === 'logret') { if (raw.some(v => !(v > 0))) throw new Error('LOG_NONPOS:' + name); r = diff(raw.map(Math.log)).map(v => 100 * v); labels = labels.slice(1); isPrice = true; }
+    else if (s.transform === 'pct') { r = raw.slice(1).map((v, i) => 100 * (v / raw[i] - 1)); labels = labels.slice(1); isPrice = true; }
+    else r = raw.slice();
+    if (r.length < 100) throw new Error('GARCH_SHORT');
+    const p = Math.max(1, +s.p || 1), q = Math.max(1, +s.q || 1), mean_ = s.mean || 'const';
+    const types = ['arch', 'garch', 'gjr', 'egarch'], fits = {};
+    for (const ty of types) { try { fits[ty] = garchFit(r, { type: ty, p, q, mean: mean_ }); } catch (e) { fits[ty] = null; } }
+    const sel = s.model || 'garch', fit = fits[sel]; if (!fit) throw new Error('GARCH_FAIL');
+    const H = Math.max(1, +s.h || 10), fc = garchForecast(fit, H), ann = +s.ann || 252;
+    return {
+      name, labels, labelsAll: D.labels, raw, isPrice, r, sel, fits, fit, fc, H, ann, desc: describe(r), adf: adfTest(r, 'c', {}),
+      pre: { lm5: archLM(r, 5), lm10: archLM(r, 10), lbr2: ljungBox(r.map(v => (v - mean(r)) ** 2), 10, 0), lbr: ljungBox(r, 10, 0) },
+      post: { lbz: ljungBox(fit.z, 10, 0), lbz2: ljungBox(fit.z.map(v => v * v), 10, 0), lm: archLM(fit.z, 5), jb: jarqueBera(fit.z) },
+      acfR2: acf(r.map(v => (v - mean(r)) ** 2), 20), acfR: acf(r, 20), nic: newsImpact(fit, Math.sqrt(variance(r))), sbar: Math.sqrt(variance(r))
+    };
+  }
+
+  // ======================= SAMPLE DATA =======================
+  function lblMonthly(y0, m0, n) { return range(n).map(i => { const m = m0 - 1 + i; return (y0 + Math.floor(m / 12)) + '-' + String((m % 12) + 1).padStart(2, '0'); }); }
+  function lblQuarter(y0, n) { return range(n).map(i => (y0 + Math.floor(i / 4)) + 'Q' + ((i % 4) + 1)); }
+  function lblBizDays(y, m, d, n) { const out = []; const dt = new Date(Date.UTC(y, m - 1, d)); while (out.length < n) { const w = dt.getUTCDay(); if (w !== 0 && w !== 6) out.push(dt.toISOString().slice(0, 10)); dt.setUTCDate(dt.getUTCDate() + 1); } return out; }
+  const r4 = v => Math.round(v * 10000) / 10000;
+  const samples = {
+    arima() {
+      const R = rng(2024), n = 144, z = [], seas = [-0.09, -0.11, 0.02, -0.01, 0.0, 0.11, 0.21, 0.2, 0.07, -0.06, -0.19, -0.08];
+      let rw = 0;
+      for (let t = 0; t < n; t++) { rw += 0.018 * R.n(); z.push(4.7 + 0.0095 * t + seas[t % 12] * (1 + 0.004 * t) + rw + 0.02 * R.n()); }
+      return { labels: lblMonthly(2013, 1, n), labelName: 'Month', cols: { SALES: z.map(v => Math.round(Math.exp(v) * 10) / 10) } };
+    },
+    unitroot() {
+      const R = rng(77), n = 120, g = [13], inf = [2.5], ex = [];
+      let ar = 0;
+      for (let t = 1; t < n; t++) { g.push(g[t - 1] + 0.007 + 0.01 * R.n()); inf.push(2.5 + 0.6 * (inf[t - 1] - 2.5) + 0.5 * R.n()); }
+      for (let t = 0; t < n; t++) { ar = 0.5 * ar + 0.03 * R.n(); ex.push(10 + 0.015 * t + ar); }
+      return { labels: lblQuarter(1996, n), labelName: 'Quarter', cols: { LGDP: g.map(r4), INF: inf.map(r4), LEXPORT: ex.map(r4) } };
+    },
+    coint() {
+      const R = rng(99), n = 120, inc = [10], u = [0], rate = [5];
+      for (let t = 1; t < n; t++) { inc.push(inc[t - 1] + 0.006 + 0.012 * R.n()); u.push(0.5 * u[t - 1] + 0.01 * R.n()); rate.push(Math.max(0.25, rate[t - 1] + 0.2 * R.n())); }
+      const cons = inc.map((v, t) => 0.3 + 0.92 * v - 0.004 * rate[t] + u[t]);
+      return { labels: lblQuarter(1996, n), labelName: 'Quarter', cols: { LCONS: cons.map(r4), LINC: inc.map(r4), RATE: rate.map(r4) } };
+    },
+    var() {
+      const R = rng(4321), n = 160, k = 3;
+      const A1 = [[0.45, -0.1, -0.15], [0.12, 0.55, 0.05], [0.2, 0.25, 0.45]], A2 = [[0.1, 0, -0.05], [0, 0.1, 0], [0, 0.05, 0.2]];
+      const mu = [2.5, 3, 4], IA = range(k).map(i => range(k).map(j => (i === j ? 1 : 0) - A1[i][j] - A2[i][j])), c = mv(IA, mu);
+      const Pc = chol([[0.36, 0.06, 0.06], [0.06, 0.16, 0.05], [0.06, 0.05, 0.25]]);
+      const Y = [mu.slice(), mu.slice()];
+      for (let t = 2; t < n + 50; t++) { const e = mv(Pc, [R.n(), R.n(), R.n()]); Y.push(range(k).map(i => c[i] + e[i] + sum(range(k).map(j => A1[i][j] * Y[t - 1][j] + A2[i][j] * Y[t - 2][j])))); }
+      const Yk = Y.slice(50);
+      return { labels: lblQuarter(1986, n), labelName: 'Quarter', cols: { GDPG: Yk.map(r => r4(r[0])), INF: Yk.map(r => r4(r[1])), RATE: Yk.map(r => r4(r[2])) } };
+    },
+    irf() {
+      const R = rng(555), n = 200, k = 3;
+      const A = [[0.3, 0, 0], [-0.06, 0.4, 0.05], [0.05, 0.08, 0.5]], mu = [0.3, 0.2, 0.25];
+      const c = mv(range(k).map(i => range(k).map(j => (i === j ? 1 : 0) - A[i][j])), mu);
+      const Pc = chol([[16, 0.5, 0.4], [0.5, 1.0, 0.05], [0.4, 0.05, 0.09]]);
+      const Y = [mu.slice()];
+      for (let t = 1; t < n + 50; t++) { const e = mv(Pc, [R.n(), R.n(), R.n()]); Y.push(range(k).map(i => c[i] + e[i] + sum(range(k).map(j => A[i][j] * Y[t - 1][j])))); }
+      const Yk = Y.slice(50);
+      return { labels: lblMonthly(2009, 1, n), labelName: 'Month', cols: { OIL: Yk.map(r => r4(r[0])), IPG: Yk.map(r => r4(r[1])), CPIG: Yk.map(r => r4(r[2])) } };
+    },
+    garch() {
+      const R = rng(31337), n = 1000; let h = 1.2, e = 0; const pr = [1500];
+      for (let t = 1; t <= n; t++) { h = 0.03 + (0.04 + (e < 0 ? 0.09 : 0)) * e * e + 0.9 * h; e = Math.sqrt(h) * R.n(); pr.push(pr[t - 1] * Math.exp((0.04 + e) / 100)); }
+      return { labels: lblBizDays(2022, 1, 3, n + 1), labelName: 'Date', cols: { INDEX: pr.map(v => Math.round(v * 100) / 100) } };
+    }
+  };
+  samples.irf.note = 1;
+
+  return {
+    sum, mean, variance, std, diff, range, zeros, eye, tr, mm, mv, inv, chol, eigSym, eigGeneral, ols, acf, pacf, ljungBox, jarqueBera, describe, archLM,
+    adfTest, ppTest, kpssTest, mkCrit, mkP, interpP, nelderMead, arimaFit, arimaForecast, varFit, varLagSelect, companionEig, granger, irfFrom, fevd, johansen,
+    garchFit, garchForecast, normCdf, normPdf, normInv, pNorm, pT, pChi2, pF, kpssCvAt,
+    runUnitRoot, runArima, runCoint, runVar, runIrf, runGarch, samples, transformCols
+  };
+})();
+
+
+</script>
+<script>
+(function () {
+  'use strict';
+  let LANG = 'th';
+  try { const v = localStorage.getItem('tse-lang'); if (v === 'th' || v === 'en') LANG = v; } catch (e) { /* ignore */ }
+  const L = (th, en) => (LANG === 'th' ? th : en);
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const range = n => Array.from({ length: n }, (_, i) => i);
+  const state = { module: null, data: null, source: null, result: null, view: 'table', charts: [], settings: {}, sel: {}, tables: [] };
+
+  // ---------------- formatting ----------------
+  function fnum(v, d = 4) {
+    if (v == null) return '—'; if (typeof v === 'string') return v; if (typeof v === 'boolean') return v ? '✓' : '✗';
+    if (isNaN(v)) return '—'; if (!isFinite(v)) return v > 0 ? '∞' : '−∞';
+    const a = Math.abs(v); if (a !== 0 && (a < 1e-4 || a >= 1e8)) return v.toExponential(3);
+    return v.toFixed(d);
+  }
+  const fp = p => (typeof p === 'string' ? p : p == null || isNaN(p) ? '—' : p < 0.0001 ? '<0.0001' : p.toFixed(4));
+  const star = p => (typeof p !== 'number' || isNaN(p) ? '' : p < 0.01 ? '***' : p < 0.05 ? '**' : p < 0.1 ? '*' : '');
+  function fmtCell(v, f) {
+    if (v == null) return '—'; if (typeof v === 'string') return v;
+    switch (f) { case 'p': return fp(v); case 'i': return isNaN(v) ? '—' : String(Math.round(v)); case 'pct': return isNaN(v) ? '—' : (v * 100).toFixed(2) + '%';
+      case 'n2': return fnum(v, 2); case 'n3': return fnum(v, 3); case 'n6': return fnum(v, 6); default: return fnum(v, 4); }
+  }
+  const dec = (ok, a, b) => ({ v: ok ? a : b, cls: ok ? 'ok' : 'bad' });
+  const C = (h, f = 'n') => ({ h, f });
+  const specName = r => (r === 'ct' ? L('ค่าคงที่+แนวโน้ม', 'Trend & intercept') : r === 'n' ? L('ไม่มีค่าคงที่', 'None') : L('ค่าคงที่', 'Intercept'));
+  const stTxt = ok => (ok ? L('นิ่ง (Stationary)', 'Stationary') : L('ไม่นิ่ง (Non-stationary)', 'Non-stationary'));
+  const ordTxt = o => (o === 0 ? 'I(0)' : o === 1 ? 'I(1)' : 'I(2)+');
+  const pctA = a => (a * 100).toFixed(a < 0.05 ? 0 : 0) + '%';
+
+  // ---------------- label helpers ----------------
+  function medianStepDays(labels) {
+    const ds = labels.slice(-12).map(s => Date.parse(s + 'T00:00:00Z')).filter(v => !isNaN(v));
+    if (ds.length < 3) return NaN; const d = []; for (let i = 1; i < ds.length; i++) d.push((ds[i] - ds[i - 1]) / 864e5);
+    d.sort((a, b) => a - b); return d[Math.floor(d.length / 2)];
+  }
+  function nextLabels(labels, H) {
+    const s = String(labels[labels.length - 1]); let m;
+    if ((m = s.match(/^(\d{4})-(\d{1,2})$/))) { let y = +m[1], mo = +m[2]; return range(H).map(() => { mo++; if (mo > 12) { mo = 1; y++; } return y + '-' + String(mo).padStart(2, '0'); }); }
+    if ((m = s.match(/^(\d{4})\s*[-:]?\s*Q([1-4])$/i))) { let y = +m[1], q = +m[2]; return range(H).map(() => { q++; if (q > 4) { q = 1; y++; } return y + 'Q' + q; }); }
+    if ((m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/))) {
+      const step = medianStepDays(labels); let dt = new Date(s + 'T00:00:00Z');
+      const hasWeekend = labels.slice(-30).some(x => { const d = new Date(x + 'T00:00:00Z'); return d.getUTCDay() === 0 || d.getUTCDay() === 6; });
+      return range(H).map(() => {
+        if (step >= 27 && step <= 32) dt = new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth() + 1, dt.getUTCDate()));
+        else if (step >= 85 && step <= 95) dt = new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth() + 3, dt.getUTCDate()));
+        else if (step >= 360) dt = new Date(Date.UTC(dt.getUTCFullYear() + 1, dt.getUTCMonth(), dt.getUTCDate()));
+        else if (step >= 6 && step <= 8) dt = new Date(dt.getTime() + 7 * 864e5);
+        else { do { dt = new Date(dt.getTime() + 864e5); } while (!hasWeekend && (dt.getUTCDay() === 0 || dt.getUTCDay() === 6)); }
+        return dt.toISOString().slice(0, 10);
+      });
+    }
+    if (/^\d+$/.test(s)) return range(H).map(i => String(+s + i + 1));
+    return range(H).map(i => 'T+' + (i + 1));
+  }
+  function guessFreq(labels) {
+    const s = String(labels[labels.length - 1] || '');
+    if (/^\d{4}-\d{1,2}$/.test(s)) return 12;
+    if (/Q[1-4]$/i.test(s)) return 4;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) { const st = medianStepDays(labels); if (st >= 27 && st <= 32) return 12; if (st >= 85 && st <= 95) return 4; }
+    return 1;
+  }
+
+  // ---------------- settings definitions ----------------
+  const transOpts = [['none', 'ระดับ (ไม่แปลง)', 'Levels (none)'], ['diff', 'ผลต่างอันดับ 1 (Δy)', 'First difference (Δy)'], ['log', 'ลอการิทึม (ln y)', 'Log (ln y)'], ['logdiff', 'อัตราการเปลี่ยนแปลง Δln y ×100', 'Log-difference ×100']];
+  const critOpts = [['aic', 'AIC', 'AIC'], ['bic', 'BIC (SC)', 'BIC (SC)'], ['hq', 'Hannan–Quinn', 'Hannan–Quinn'], ['fpe', 'FPE', 'FPE'], ['fixed', 'กำหนดเอง (ใช้ค่า Lag)', 'Fixed (use Lag)']];
+  const alphaOpts = [['0.01', '1%', '1%'], ['0.05', '5%', '5%'], ['0.1', '10%', '10%']];
+
+  // ---------------- chart helpers ----------------
+  const PAL = ['#1f56b8', '#d9622b', '#17845a', '#a3327a', '#6a4fc4', '#b07d0a', '#138a9e', '#c03535'];
+  const BAND = 'rgba(31,86,184,0.15)';
+  function baseOpts(title, o = {}) {
+    const x = { type: o.xType || 'category', ticks: { maxTicksLimit: o.xTicks || 8, maxRotation: 0, autoSkip: true, color: '#4a5468', font: { size: 11 } }, grid: { display: !!o.xGrid, color: '#eef1f6' }, title: { display: !!o.xTitle, text: o.xTitle || '', color: '#4a5468' } };
+    const y = { type: o.yType || 'linear', ticks: { color: '#4a5468', font: { size: 11 } }, grid: { color: '#e9edf4' }, title: { display: !!o.yTitle, text: o.yTitle || '', color: '#4a5468' } };
+    ['min', 'max'].forEach(k => { if (o['x' + k] != null) x[k] = o['x' + k]; if (o['y' + k] != null) y[k] = o['y' + k]; });
+    if (o.stacked) { x.stacked = true; y.stacked = true; }
+    return {
+      responsive: true, maintainAspectRatio: false, animation: false, devicePixelRatio: 2,
+      interaction: { mode: o.mode || 'index', intersect: false },
+      plugins: {
+        title: { display: true, text: title, color: '#142033', font: { size: 13.5, weight: '600' }, padding: { top: 2, bottom: 10 } },
+        subtitle: { display: !!o.sub, text: o.sub || '', color: '#7b859a', font: { size: 11.5 }, padding: { bottom: 8 } },
+        legend: { display: o.legend !== false, position: 'bottom', labels: { boxWidth: 12, boxHeight: 10, color: '#33405a', font: { size: 11.5 }, filter: it => !String(it.text).startsWith('_') } },
+        tooltip: { filter: it => !String(it.dataset.label || '').startsWith('_'), callbacks: { label: c => `${c.dataset.label}: ${typeof c.parsed.y === 'number' ? fnum(c.parsed.y, 4) : c.parsed.y}` } }
+      },
+      scales: { x, y }
+    };
+  }
+  const ds = (label, data, color, extra = {}) => Object.assign({ label, data, borderColor: color, backgroundColor: color, borderWidth: 1.6, pointRadius: 0, pointHoverRadius: 3, tension: 0 }, extra);
+  const hline = (label, n, v, color = '#9aa3b5', dash = [5, 4]) => ({ type: 'line', label, data: new Array(n).fill(v), borderColor: color, borderWidth: 1.2, borderDash: dash, pointRadius: 0, fill: false });
+  const lineSpec = (title, labels, datasets, o = {}) => ({ title, wide: !!o.wide, cfg: { type: 'line', data: { labels, datasets }, options: baseOpts(title, o) } });
+  const barSpec = (title, labels, datasets, o = {}) => ({ title, wide: !!o.wide, cfg: { type: 'bar', data: { labels, datasets }, options: baseOpts(title, o) } });
+  function acfSpec(title, vals, n, color = PAL[0]) {
+    const lags = vals.slice(1), labels = lags.map((_, i) => String(i + 1)), cb = 1.96 / Math.sqrt(n);
+    return barSpec(title, labels, [ds(L('สหสัมพันธ์', 'Correlation'), lags, color, { borderWidth: 0, barPercentage: 0.55 }), hline('_+', lags.length, cb, '#c03535'), hline('_−', lags.length, -cb, '#c03535'), hline('_0', lags.length, 0, '#5c667a', [])], { xTitle: 'Lag', legend: false, ymin: -1, ymax: 1, sub: L('เส้นประ = ขอบเขต ±1.96/√n', 'Dashed = ±1.96/√n bounds'), xTicks: 13 });
+  }
+  function histSpec(title, x, color = PAL[0]) {
+    const n = x.length, m = TS.mean(x), sd = TS.std(x), s = x.slice().sort((a, b) => a - b);
+    const q = p => s[Math.floor(p * (n - 1))]; const iqr = q(0.75) - q(0.25);
+    let bw = iqr > 0 ? 2 * iqr / Math.cbrt(n) : (s[n - 1] - s[0]) / 10; let k = Math.ceil((s[n - 1] - s[0]) / bw); k = Math.max(8, Math.min(k || 10, 40)); bw = (s[n - 1] - s[0]) / k || 1;
+    const cnt = new Array(k).fill(0); for (const v of x) cnt[Math.min(k - 1, Math.floor((v - s[0]) / bw))]++;
+    const centers = range(k).map(i => s[0] + (i + 0.5) * bw);
+    return barSpec(title, centers.map(c => fnum(c, 2)), [
+      ds(L('ความหนาแน่นจากข้อมูล', 'Empirical density'), cnt.map(c => c / (n * bw)), color + 'b0', { borderWidth: 0, barPercentage: 1, categoryPercentage: 1, order: 2 }),
+      { type: 'line', label: L('การแจกแจงปกติ', 'Normal density'), data: centers.map(c => TS.normPdf((c - m) / sd) / sd), borderColor: '#c03535', borderWidth: 2, pointRadius: 0, tension: 0.35, order: 1 }
+    ], { xTicks: 8 });
+  }
+  function qqSpec(title, x) {
+    const n = x.length, m = TS.mean(x), sd = TS.std(x), s = x.map(v => (v - m) / sd).sort((a, b) => a - b);
+    const pts = s.map((v, i) => ({ x: TS.normInv((i + 0.5) / n), y: v }));
+    const lo = Math.min(pts[0].x, pts[0].y), hi = Math.max(pts[n - 1].x, pts[n - 1].y);
+    const o = baseOpts(title, { xType: 'linear', xTitle: L('ควอนไทล์ทางทฤษฎี (Normal)', 'Theoretical quantiles (Normal)'), yTitle: L('ควอนไทล์จากข้อมูล (มาตรฐาน)', 'Sample quantiles (standardised)'), mode: 'nearest', xGrid: true });
+    return { title, cfg: { type: 'scatter', data: { datasets: [ds(L('ค่าจากข้อมูล', 'Observations'), pts, PAL[0] + 'aa', { pointRadius: 2.2, showLine: false }), ds(L('เส้น 45°', '45° line'), [{ x: lo, y: lo }, { x: hi, y: hi }], '#c03535', { showLine: true, pointRadius: 0, borderWidth: 1.6 })] }, options: o } };
+  }
+  function circleSpec(title, roots) {
+    const circ = range(181).map(i => ({ x: Math.cos(i * Math.PI / 90), y: Math.sin(i * Math.PI / 90) }));
+    const o = baseOpts(title, { xType: 'linear', xmin: -1.25, xmax: 1.25, ymin: -1.25, ymax: 1.25, xTitle: L('ส่วนจริง', 'Real'), yTitle: L('ส่วนจินตภาพ', 'Imaginary'), mode: 'nearest', xGrid: true });
+    return { title, sq: true, cfg: { type: 'scatter', data: { datasets: [ds(L('วงกลมหนึ่งหน่วย', 'Unit circle'), circ, '#9aa3b5', { showLine: true, pointRadius: 0, borderWidth: 1.2 }), ds(L('รากของ Companion matrix', 'Companion roots'), roots.map(r => ({ x: r.re, y: r.im })), PAL[1], { pointRadius: 5, showLine: false })] }, options: o } };
+  }
+
+  // ---------------- module definitions ----------------
+  const MODS = {};
+  const order = ['arima', 'unitroot', 'coint', 'var', 'irf', 'garch'];
+
+  // ===== ARIMA =====
+  MODS.arima = {
+    tag: 'ARIMA · SARIMA', vars: 'single',
+    name: () => L('แบบจำลอง ARIMA / SARIMA', 'ARIMA / SARIMA Models'),
+    short: () => L('พยากรณ์ค่าในอนาคตจากค่าในอดีตของตัวแปรเอง รองรับฤดูกาล (Seasonal)', 'Forecast future values from the series’ own past, with optional seasonality'),
+    info: () => ({
+      purpose: L('พยากรณ์ค่าในอนาคตจากโครงสร้างในอดีตของตัวแปรเดียว: AR (ค่าล่าช้าของตัวเอง), I (การหาผลต่างเพื่อให้นิ่ง) และ MA (ค่าคลาดเคลื่อนในอดีต) SARIMA เพิ่มส่วนฤดูกาล (P,D,Q)s', 'Forecasts a single series from its own history: AR (own lags), I (differencing for stationarity) and MA (past shocks). SARIMA adds a seasonal (P,D,Q)s part.'),
+      eq: 'φ(B)Φ(Bˢ)(1−B)ᵈ(1−Bˢ)ᴰ yₜ = c + θ(B)Θ(Bˢ) εₜ',
+      method: L('ประมาณค่าด้วย Conditional Sum of Squares (Gaussian likelihood) + Nelder–Mead, ค่า SE จาก Hessian เชิงตัวเลข, เลือกตัวแบบอัตโนมัติด้วย AIC ได้', 'Conditional-sum-of-squares Gaussian likelihood with Nelder–Mead; SEs from a numerical Hessian; optional AIC grid search.'),
+      data: L('ตัวแปร 1 ตัว อย่างน้อย ~40 ค่า (กรณีมีฤดูกาลควรมีอย่างน้อย 3 รอบฤดูกาล)', 'One variable, ≥ ~40 observations (≥ 3 full seasons for SARIMA).')
+    }),
+    settings: [
+      { id: 'p', type: 'num', th: 'p (AR)', en: 'p (AR)', def: 0, min: 0, max: 5 },
+      { id: 'd', type: 'num', th: 'd (ผลต่าง)', en: 'd (differencing)', def: 1, min: 0, max: 2 },
+      { id: 'q', type: 'num', th: 'q (MA)', en: 'q (MA)', def: 1, min: 0, max: 5 },
+      { id: 's', type: 'num', th: 'คาบฤดูกาล s (1 = ไม่มี)', en: 'Season length s (1 = none)', def: 12, min: 1, max: 52 },
+      { id: 'P', type: 'num', th: 'P (Seasonal AR)', en: 'P (seasonal AR)', def: 0, min: 0, max: 2 },
+      { id: 'D', type: 'num', th: 'D (Seasonal diff.)', en: 'D (seasonal diff.)', def: 1, min: 0, max: 1 },
+      { id: 'Q', type: 'num', th: 'Q (Seasonal MA)', en: 'Q (seasonal MA)', def: 1, min: 0, max: 2 },
+      { id: 'h', type: 'num', th: 'ช่วงพยากรณ์ล่วงหน้า (h)', en: 'Forecast horizon (h)', def: 12, min: 1, max: 60 },
+      { id: 'log', type: 'chk', th: 'แปลงเป็น ln(y) ก่อนวิเคราะห์', en: 'Log-transform ln(y)', def: true },
+      { id: 'constant', type: 'chk', th: 'รวมค่าคงที่ / drift', en: 'Include constant / drift', def: false },
+      { id: 'auto', type: 'chk', th: 'เลือก p, q, P, Q อัตโนมัติ (AIC)', en: 'Auto-select p, q, P, Q (AIC)', def: false }
+    ],
+    run: (D, s) => TS.runArima(D, s),
+    summary(r) {
+      const sp = r.sp, m = modelName(sp);
+      const sig = r.fit.coefs.filter(c => c.p < 0.05).length;
+      return [
+        L(`ตัวแบบที่ใช้: ${m}${r.grid ? ' (เลือกโดย AIC)' : ''} — AIC = ${fnum(r.fit.aic, 2)}, สัมประสิทธิ์มีนัยสำคัญที่ 5% จำนวน ${sig}/${r.fit.coefs.length} ตัว`, `Model: ${m}${r.grid ? ' (selected by AIC)' : ''} — AIC = ${fnum(r.fit.aic, 2)}; ${sig}/${r.fit.coefs.length} coefficients significant at 5%`),
+        r.lb[0].p > 0.05 ? L(`Ljung–Box Q(10) p = ${fp(r.lb[0].p)} → ส่วนเหลือเป็น White noise (ตัวแบบเหมาะสม)`, `Ljung–Box Q(10) p = ${fp(r.lb[0].p)} → residuals are white noise (adequate model)`) : L(`Ljung–Box Q(10) p = ${fp(r.lb[0].p)} → ส่วนเหลือยังมีสหสัมพันธ์ ควรปรับอันดับตัวแบบ`, `Ljung–Box Q(10) p = ${fp(r.lb[0].p)} → residual autocorrelation remains; consider other orders`),
+        L(`ค่าพยากรณ์งวดถัดไป (${r.flabels[0]}) = ${fnum(r.fmean[0], 3)} [95% CI: ${fnum(r.flo[0], 3)} – ${fnum(r.fhi[0], 3)}], MAPE ในตัวอย่าง = ${fnum(r.acc.mape, 2)}%`, `Next-period forecast (${r.flabels[0]}) = ${fnum(r.fmean[0], 3)} [95% CI: ${fnum(r.flo[0], 3)} – ${fnum(r.fhi[0], 3)}]; in-sample MAPE = ${fnum(r.acc.mape, 2)}%`)
+      ];
+    },
+    tables(r) {
+      const sp = r.sp, f = r.fit, T = [];
+      T.push({ title: L('สรุปตัวแบบ', 'Model summary'), cols: [C(L('รายการ', 'Item'), 't'), C(L('ค่า', 'Value'), 't')], rows: [
+        [L('ตัวแปร', 'Variable'), r.name], [L('ตัวแบบ', 'Model'), modelName(sp)], [L('การแปลงข้อมูล', 'Transformation'), r.log ? 'ln(y)' : L('ไม่มี', 'None')],
+        [L('จำนวนข้อมูลทั้งหมด', 'Observations'), String(r.raw.length)], [L('จำนวนที่ใช้ประมาณค่า', 'Effective observations'), String(f.neff)],
+        ['Log-likelihood', fnum(f.ll, 3)], ['AIC', fnum(f.aic, 3)], ['AICc', fnum(f.aicc, 3)], ['BIC (SC)', fnum(f.bic, 3)], ['σ² (' + L('ความแปรปรวนส่วนเหลือ', 'residual variance') + ')', fnum(f.sigma2, 6)],
+        [L('วิธีประมาณค่า', 'Estimation'), 'CSS-ML (Nelder–Mead)']],
+        notes: [L('AIC, AICc และ BIC ใช้เปรียบเทียบตัวแบบ — ค่ายิ่งต่ำยิ่งดี (เปรียบเทียบได้เฉพาะตัวแบบที่มี d, D และการแปลงข้อมูลเหมือนกัน)', 'AIC, AICc and BIC compare models — lower is better (only comparable for the same d, D and transformation).'),
+          L('σ² คือความแปรปรวนของส่วนเหลือ (white-noise innovation) ใช้คำนวณช่วงพยากรณ์', 'σ² is the innovation (residual) variance used to build forecast intervals.'),
+          L('Effective observations = จำนวนค่าที่เหลือหลังการหาผลต่างและเงื่อนไขค่าเริ่มต้นของ AR', 'Effective observations = sample left after differencing and conditioning on initial AR values.')] });
+      T.push({ title: L('ค่าสัมประสิทธิ์ที่ประมาณได้', 'Estimated coefficients'), cols: [C(L('พารามิเตอร์', 'Parameter'), 't'), C('Coef.'), C('Std. Error'), C('z-stat', 'n3'), C('p-value', 'p'), C('95% CI (low)'), C('95% CI (high)'), C('Sig.', 't')],
+        rows: f.coefs.length ? f.coefs.map(c => [c.name, c.coef, c.se, c.z, c.p, c.lo, c.hi, star(c.p)]) : [[L('ไม่มีพารามิเตอร์ ARMA (white noise)', 'No ARMA parameters (white noise)'), null, null, null, null, null, null, '']],
+        notes: [L('Coef. = ค่าสัมประสิทธิ์; AR(i)/SAR(i) คือผลของค่าในอดีต, MA(i)/SMA(i) คือผลของ shock ในอดีต', 'Coef. = estimate; AR/SAR terms capture the effect of past values, MA/SMA terms the effect of past shocks.'),
+          L('z-stat = Coef./SE ทดสอบ H₀: สัมประสิทธิ์ = 0; p-value < 0.05 หมายถึงมีนัยสำคัญที่ระดับ 5%', 'z-stat = Coef./SE tests H₀: coefficient = 0; p < 0.05 means significant at 5%.'),
+          L('*** p<0.01, ** p<0.05, * p<0.10 — ค่า AR และ MA ถูกบังคับให้อยู่ในเขต stationary / invertible', '*** p<0.01, ** p<0.05, * p<0.10 — AR/MA polynomials are constrained to be stationary/invertible.')] });
+      const nar = sp.p + sp.q + sp.P + sp.Q;
+      T.push({ title: L('การตรวจสอบส่วนเหลือ (Residual diagnostics)', 'Residual diagnostics'), cols: [C(L('การทดสอบ', 'Test'), 't'), C(L('สมมติฐานหลัก H₀', 'Null hypothesis H₀'), 't'), C(L('ค่าสถิติ', 'Statistic'), 'n3'), C('df', 'i'), C('p-value', 'p'), C(L('ผลสรุป', 'Conclusion'), 't')], rows: [
+        ['Ljung–Box Q(' + r.lb[0].lags + ')', L('ไม่มีสหสัมพันธ์ในตัว', 'No autocorrelation'), r.lb[0].Q, r.lb[0].df, r.lb[0].p, dec(r.lb[0].p > 0.05, L('ไม่ปฏิเสธ H₀ ✓', 'Do not reject ✓'), L('ปฏิเสธ H₀', 'Reject H₀'))],
+        ['Ljung–Box Q(' + r.lb[1].lags + ')', L('ไม่มีสหสัมพันธ์ในตัว', 'No autocorrelation'), r.lb[1].Q, r.lb[1].df, r.lb[1].p, dec(r.lb[1].p > 0.05, L('ไม่ปฏิเสธ H₀ ✓', 'Do not reject ✓'), L('ปฏิเสธ H₀', 'Reject H₀'))],
+        ['Jarque–Bera', L('ส่วนเหลือแจกแจงปกติ', 'Residuals are normal'), r.jb.JB, 2, r.jb.p, dec(r.jb.p > 0.05, L('ไม่ปฏิเสธ H₀ ✓', 'Do not reject ✓'), L('ปฏิเสธ H₀', 'Reject H₀'))],
+        ['ARCH-LM(5)', L('ไม่มีผล ARCH', 'No ARCH effect'), r.archLM.LM, 5, r.archLM.p, dec(r.archLM.p > 0.05, L('ไม่ปฏิเสธ H₀ ✓', 'Do not reject ✓'), L('ปฏิเสธ H₀', 'Reject H₀'))],
+        ['ADF (' + L('ข้อมูลหลังหาผลต่าง', 'differenced series') + ')', L('มี Unit root', 'Unit root'), r.adfW.stat, r.adfW.lags, r.adfW.p, dec(r.adfW.p < 0.05, L('นิ่ง ✓', 'Stationary ✓'), L('ยังไม่นิ่ง', 'Not stationary'))]],
+        notes: [L(`Ljung–Box: ถ้า p > 0.05 แสดงว่าส่วนเหลือเป็น white noise (df ถูกปรับลบจำนวนพารามิเตอร์ ARMA = ${nar})`, `Ljung–Box: p > 0.05 indicates white-noise residuals (df adjusted for ${nar} ARMA parameters).`),
+          L('Jarque–Bera ทดสอบความเบ้และความโด่ง; หากปฏิเสธ ช่วงพยากรณ์แบบ Normal อาจไม่แม่นยำ', 'Jarque–Bera tests skewness/kurtosis; rejection means Normal-based intervals may be imprecise.'),
+          L('ARCH-LM ที่มีนัยสำคัญบ่งชี้ว่าความแปรปรวนเปลี่ยนตามเวลา — พิจารณาใช้ GARCH', 'A significant ARCH-LM points to time-varying variance — consider a GARCH model.'),
+          L('ADF ของข้อมูลหลังหาผลต่าง (d, D) ควรนิ่ง เพื่อยืนยันว่าอันดับการหาผลต่างเพียงพอ', 'ADF on the differenced series should indicate stationarity, confirming d and D are sufficient.')] });
+      T.push({ title: L('ความแม่นยำในตัวอย่าง (In-sample accuracy)', 'In-sample accuracy'), cols: [C(L('ตัวชี้วัด', 'Metric'), 't'), C(L('ค่า', 'Value')), C(L('ความหมาย', 'Meaning'), 't')], rows: [
+        ['RMSE', r.acc.rmse, L('รากที่สองของค่าเฉลี่ยความคลาดเคลื่อนกำลังสอง (หน่วยเดียวกับข้อมูล)', 'Root mean squared error (data units)')],
+        ['MAE', r.acc.mae, L('ค่าเฉลี่ยความคลาดเคลื่อนสัมบูรณ์', 'Mean absolute error')],
+        ['MAPE (%)', r.acc.mape, L('ร้อยละความคลาดเคลื่อนสัมบูรณ์เฉลี่ย (<10% ดีมาก, 10–20% ดี)', 'Mean absolute percentage error (<10% very good, 10–20% good)')]],
+        notes: [L('คำนวณจากค่าพยากรณ์ล่วงหน้า 1 ช่วง (one-step-ahead fitted values) ในหน่วยเดิมของข้อมูล', 'Computed from one-step-ahead fitted values on the original scale.')] });
+      T.push({ title: L('ค่าพยากรณ์และช่วงความเชื่อมั่น 95%', 'Forecasts with 95% intervals'), cols: [C(L('งวด', 'Period'), 't'), C('h', 'i'), C(L('ค่าพยากรณ์', 'Forecast')), C(L('ขอบล่าง 95%', 'Lower 95%')), C(L('ขอบบน 95%', 'Upper 95%')), C('SE' + (r.log ? ' (ln)' : ''))],
+        rows: r.fmean.map((v, i) => [r.flabels[i], i + 1, v, r.flo[i], r.fhi[i], r.fse[i]]),
+        notes: [L('ช่วงพยากรณ์คำนวณจากน้ำหนัก ψ (MA(∞) representation): Var(eₜ₊ₕ) = σ² Σψⱼ²', 'Intervals use ψ-weights of the MA(∞) form: Var(e_{t+h}) = σ² Σψⱼ².'), r.log ? L('ข้อมูลถูกแปลงเป็น ln จึงแปลงกลับด้วย exp() — ค่าพยากรณ์คือค่ามัธยฐาน และช่วงไม่สมมาตร', 'Because ln was used, values are back-transformed with exp() — point forecasts are medians and intervals are asymmetric.') : L('ช่วงพยากรณ์จะกว้างขึ้นเมื่อพยากรณ์ไกลออกไป สะท้อนความไม่แน่นอนที่สะสม', 'Intervals widen with the horizon, reflecting accumulated uncertainty.')] });
+      const cb = 1.96 / Math.sqrt(r.w.length);
+      T.push({ title: L('ACF และ PACF ของข้อมูลหลังหาผลต่าง', 'ACF & PACF of the differenced series'), cols: [C('Lag', 'i'), C('ACF'), C('PACF'), C('±95% bound'), C(L('นัยสำคัญ', 'Significant'), 't')],
+        rows: r.acfW.slice(1).map((v, i) => [i + 1, v, r.pacfW[i + 1], cb, (Math.abs(v) > cb ? 'ACF ' : '') + (Math.abs(r.pacfW[i + 1]) > cb ? 'PACF' : '')]),
+        notes: [L('ACF ตัดขาดหลัง lag q → บ่งชี้ MA(q); PACF ตัดขาดหลัง lag p → บ่งชี้ AR(p)', 'ACF cutting off after lag q suggests MA(q); PACF cutting off after lag p suggests AR(p).'), L('ค่าที่ lag ฤดูกาล (เช่น 12, 24) ช่วยกำหนด P และ Q', 'Spikes at seasonal lags (e.g. 12, 24) guide P and Q.')] });
+      if (r.grid) T.push({ title: L('การเลือกตัวแบบอัตโนมัติ (10 อันดับแรกตาม AIC)', 'Automatic model selection (top 10 by AIC)'), cols: [C(L('อันดับ', 'Rank'), 'i'), C(L('ตัวแบบ', 'Model'), 't'), C('AIC', 'n3'), C('AICc', 'n3'), C('BIC', 'n3'), C('Log-lik', 'n3')],
+        rows: r.grid.map((g, i) => [i + 1, modelName(g.sp), g.aic, g.aicc, g.bic, g.ll]), notes: [L('ค้นหา p,q ∈ {0,1,2} และ P,Q ∈ {0,1} (ถ้ามีฤดูกาล) โดยคง d, D ตามที่กำหนด', 'Searched p,q ∈ {0,1,2} and P,Q ∈ {0,1} (if seasonal) holding d and D fixed.')] });
+      return T;
+    },
+    charts(r) {
+      const n = r.raw.length, H = r.fmean.length, lab = [...r.labels, ...r.flabels], pad = new Array(n).fill(null);
+      const last = [...new Array(n - 1).fill(null), r.raw[n - 1]];
+      const out = [];
+      out.push(lineSpec(L('ข้อมูลจริง ค่าประมาณ และค่าพยากรณ์', 'Actual, fitted and forecast'), lab, [
+        ds(L('ข้อมูลจริง', 'Actual'), [...r.raw, ...new Array(H).fill(null)], '#142033', { borderWidth: 1.6 }),
+        ds(L('ค่าประมาณ (Fitted)', 'Fitted'), [...r.fitted, ...new Array(H).fill(null)], PAL[1], { borderWidth: 1.3, borderDash: [4, 3] }),
+        ds('_lo', [...pad, ...r.flo], 'rgba(0,0,0,0)', { fill: false }),
+        ds(L('ช่วง 95%', '95% interval'), [...pad, ...r.fhi], 'rgba(0,0,0,0)', { fill: '-1', backgroundColor: BAND }),
+        ds(L('ค่าพยากรณ์', 'Forecast'), [...last.slice(0, n), ...r.fmean], PAL[0], { borderWidth: 2.2, pointRadius: [...new Array(n).fill(0), ...new Array(H).fill(2.5)] })
+      ], { wide: true, xTicks: 12 }));
+      out.push(lineSpec(L('ข้อมูลหลังหาผลต่าง (ควรนิ่ง)', 'Differenced series (should be stationary)'), r.labels.slice(n - r.w.length), [ds('w', r.w, PAL[2]), hline('_0', r.w.length, TS.mean(r.w))], { legend: false }));
+      out.push(acfSpec('ACF — ' + L('ข้อมูลหลังหาผลต่าง', 'differenced series'), r.acfW, r.w.length, PAL[0]));
+      out.push(acfSpec('PACF — ' + L('ข้อมูลหลังหาผลต่าง', 'differenced series'), r.pacfW, r.w.length, PAL[4]));
+      out.push(lineSpec(L('ส่วนเหลือ (Residuals)', 'Residuals'), r.labels, [ds(L('ส่วนเหลือ', 'Residual'), r.resid, PAL[3]), hline('_0', n, 0, '#5c667a', [])], { legend: false }));
+      out.push(acfSpec('ACF — ' + L('ส่วนเหลือ', 'residuals'), r.acfR, r.er.length, PAL[3]));
+      out.push(histSpec(L('ฮิสโตแกรมของส่วนเหลือ', 'Residual histogram'), r.er, PAL[3]));
+      out.push(qqSpec(L('Normal Q–Q plot ของส่วนเหลือ', 'Normal Q–Q plot of residuals'), r.er));
+      return out;
+    }
+  };
+  function modelName(sp) { return (sp.s > 1 && (sp.P || sp.D || sp.Q) ? 'SARIMA' : 'ARIMA') + `(${sp.p},${sp.d},${sp.q})` + (sp.s > 1 && (sp.P || sp.D || sp.Q) ? `(${sp.P},${sp.D},${sp.Q})${sp.s}` : '') + (sp.c ? ' + c' : ''); }
+
+  // ===== UNIT ROOT =====
+  MODS.unitroot = {
+    tag: 'ADF · PP · KPSS', vars: 'multi', minVars: 1, maxVars: 12,
+    name: () => L('การทดสอบ Unit Root และความนิ่ง', 'Unit Root Tests & Stationarity'),
+    short: () => L('ทดสอบความนิ่งของข้อมูลด้วย ADF, Phillips–Perron และ KPSS เพื่อป้องกัน Spurious Regression', 'Test stationarity with ADF, Phillips–Perron and KPSS to avoid spurious regression'),
+    info: () => ({
+      purpose: L('ตรวจสอบว่าอนุกรมเวลานิ่ง (stationary) หรือมี unit root ก่อนนำไปสร้างแบบจำลอง เพื่อหลีกเลี่ยงความสัมพันธ์ลวง (Spurious Regression) และกำหนดอันดับ Integration I(d)', 'Checks whether each series is stationary or has a unit root before modelling, avoiding spurious regression and identifying the order of integration I(d).'),
+      eq: 'ADF: Δyₜ = α + βt + γyₜ₋₁ + Σδᵢ Δyₜ₋ᵢ + εₜ   (H₀: γ = 0)',
+      method: L('ADF (เลือก lag ด้วย AIC/BIC), Phillips–Perron (Newey–West), KPSS (H₀: นิ่ง) — ค่าวิกฤตและ p-value ตาม MacKinnon (1994, 2010)', 'ADF (lag by AIC/BIC), Phillips–Perron (Newey–West), KPSS (H₀: stationary) — MacKinnon (1994, 2010) critical values & p-values.'),
+      data: L('ตัวแปร 1 ตัวขึ้นไป แต่ละตัวอย่างน้อย 20 ค่า (แนะนำ ≥ 50)', 'One or more variables, ≥ 20 observations each (≥ 50 recommended).')
+    }),
+    settings: [
+      { id: 'spec', type: 'sel', th: 'รูปแบบสมการ (ระดับ)', en: 'Deterministic terms (levels)', def: 'c', opts: [['c', 'ค่าคงที่ (Intercept)', 'Intercept'], ['ct', 'ค่าคงที่ + แนวโน้ม (Trend & intercept)', 'Trend & intercept']] },
+      { id: 'ic', type: 'sel', th: 'เกณฑ์เลือก Lag (ADF)', en: 'ADF lag criterion', def: 'AIC', opts: [['AIC', 'AIC', 'AIC'], ['BIC', 'BIC (SC)', 'BIC (SC)']] },
+      { id: 'alpha', type: 'sel', th: 'ระดับนัยสำคัญ', en: 'Significance level', def: '0.05', opts: alphaOpts }
+    ],
+    run: (D, s) => TS.runUnitRoot(D, s),
+    summary(r) {
+      return r.items.map(it => L(`${it.name}: ${ordTxt(it.overall)} — ADF p(ระดับ) = ${fp(it.level.adf.p)}, KPSS = ${fnum(it.level.kpss.stat, 3)} → ${it.overall === 0 ? 'นิ่งที่ระดับ (Level)' : it.overall === 1 ? 'นิ่งหลังหาผลต่างอันดับ 1' : 'ยังไม่นิ่งแม้หาผลต่างอันดับ 1'}`,
+        `${it.name}: ${ordTxt(it.overall)} — ADF p(level) = ${fp(it.level.adf.p)}, KPSS = ${fnum(it.level.kpss.stat, 3)} → ${it.overall === 0 ? 'stationary in levels' : it.overall === 1 ? 'stationary after first differencing' : 'not stationary even after first differencing'}`));
+    },
+    tables(r) {
+      const a = r.alpha, T = [], lvS = specName(r.spec), dS = specName('c'), Lv = L('ระดับ (Level)', 'Level'), Df = L('ผลต่างอันดับ 1 (Δ)', 'First difference');
+      T.push({ title: L('สรุปผลการทดสอบความนิ่ง', 'Stationarity summary'), cols: [C(L('ตัวแปร', 'Variable'), 't'), C('ADF p (Level)', 'p'), C('PP p (Level)', 'p'), C('KPSS (Level)', 'n3'), C('ADF p (Δ)', 'p'), C('PP p (Δ)', 'p'), C('KPSS (Δ)', 'n3'), C('ADF / PP / KPSS', 't'), C(L('สรุป', 'Conclusion'), 't')],
+        rows: r.items.map(it => [it.name, it.level.adf.p, it.level.pp.p, it.level.kpss.stat, it.diff.adf.p, it.diff.pp.p, it.diff.kpss.stat, `${ordTxt(it.order.adf)} / ${ordTxt(it.order.pp)} / ${ordTxt(it.order.kpss)}`, { v: ordTxt(it.overall), cls: it.overall === 0 ? 'ok' : 'strong' }]),
+        notes: [L(`ระดับนัยสำคัญ ${pctA(a)}; ADF และ PP มี H₀: มี unit root (ไม่นิ่ง) — p-value < ${a} ⇒ นิ่ง`, `Significance ${pctA(a)}; ADF and PP have H₀: unit root (non-stationary) — p < ${a} ⇒ stationary.`),
+          L('KPSS มี H₀: นิ่ง — ค่าสถิติ > ค่าวิกฤต ⇒ ไม่นิ่ง; การใช้ทดสอบทั้งสองแนวทางช่วยยืนยันผล (confirmatory analysis)', 'KPSS has H₀: stationary — statistic > critical value ⇒ non-stationary; combining both approaches gives a confirmatory analysis.'),
+          L('I(0) = นิ่งที่ระดับ, I(1) = นิ่งหลังหาผลต่าง 1 ครั้ง; ข้อสรุปรวมใช้เสียงข้างมากของ 3 การทดสอบ', 'I(0) = stationary in levels, I(1) = stationary after one difference; the overall conclusion is the majority of the three tests.'),
+          L('ตัวแปร I(1) หลายตัว → ควรทดสอบ Cointegration; ถ้าทุกตัว I(0) → ใช้ VAR ในระดับได้', 'Several I(1) variables → test for cointegration; all I(0) → a VAR in levels is appropriate.')] });
+      const adfRow = (it, R, ser, sp, ok) => [it.name, ser, sp, R.adf.lags, R.adf.nobs, R.adf.stat, R.adf.p, R.adf.cv[0], R.adf.cv[1], R.adf.cv[2], R.adf.gamma, dec(ok, stTxt(true), stTxt(false))];
+      T.push({ title: 'Augmented Dickey–Fuller (ADF)', cols: [C(L('ตัวแปร', 'Variable'), 't'), C(L('อนุกรม', 'Series'), 't'), C(L('รูปแบบ', 'Spec'), 't'), C('Lags', 'i'), C('Obs', 'i'), C('τ-stat', 'n3'), C('p-value', 'p'), C('CV 1%', 'n3'), C('CV 5%', 'n3'), C('CV 10%', 'n3'), C('γ̂'), C(L('ผล', 'Result'), 't')],
+        rows: r.items.flatMap(it => [adfRow(it, it.level, Lv, lvS, it.stL.adf), adfRow(it, it.diff, Df, dS, it.stD.adf)]),
+        notes: [L('ADF: Δyₜ = α (+βt) + γyₜ₋₁ + Σδᵢ Δyₜ₋ᵢ + εₜ ทดสอบ H₀: γ = 0 (มี unit root) กับ H₁: γ < 0', 'ADF regression Δyₜ = α (+βt) + γyₜ₋₁ + Σδᵢ Δyₜ₋ᵢ + εₜ tests H₀: γ = 0 (unit root) vs H₁: γ < 0.'),
+          L(`จำนวน Lag เลือกด้วย ${r.ic} (สูงสุด 12(T/100)^¼) เพื่อขจัดสหสัมพันธ์ในตัวของค่าคลาดเคลื่อน`, `Lags chosen by ${r.ic} (max 12(T/100)^¼) to remove serial correlation.`),
+          L('τ-stat ติดลบมากกว่าค่าวิกฤต (CV) ⇒ ปฏิเสธ H₀ ⇒ อนุกรมนิ่ง; ค่าวิกฤตจาก MacKinnon (2010)', 'τ more negative than the critical value ⇒ reject H₀ ⇒ stationary; CVs from MacKinnon (2010).'),
+          L('γ̂ คือสัมประสิทธิ์ของ yₜ₋₁ ซึ่งเท่ากับ (ρ − 1)', 'γ̂ is the coefficient on yₜ₋₁, i.e. (ρ − 1).')] });
+      const ppRow = (it, R, ser, sp, ok) => [it.name, ser, sp, R.pp.lags, R.pp.nobs, R.pp.stat, R.pp.Za, R.pp.p, R.pp.cv[1], dec(ok, stTxt(true), stTxt(false))];
+      T.push({ title: 'Phillips–Perron (PP)', cols: [C(L('ตัวแปร', 'Variable'), 't'), C(L('อนุกรม', 'Series'), 't'), C(L('รูปแบบ', 'Spec'), 't'), C('Bandwidth', 'i'), C('Obs', 'i'), C('Z(t)', 'n3'), C('Z(α)', 'n3'), C('p-value', 'p'), C('CV 5%', 'n3'), C(L('ผล', 'Result'), 't')],
+        rows: r.items.flatMap(it => [ppRow(it, it.level, Lv, lvS, it.stL.pp), ppRow(it, it.diff, Df, dS, it.stD.pp)]),
+        notes: [L('PP ปรับค่าสถิติ t แบบ non-parametric ด้วยความแปรปรวนระยะยาว (Newey–West, Bartlett kernel) แทนการเพิ่ม lag', 'PP corrects the t-statistic non-parametrically using a Newey–West (Bartlett) long-run variance instead of adding lags.'),
+          L('ทนทานต่อ heteroskedasticity และ autocorrelation; H₀: มี unit root; ใช้ค่าวิกฤตเดียวกับ ADF', 'Robust to heteroskedasticity/autocorrelation; H₀: unit root; same critical values as ADF.'),
+          L('Z(α) = T(ρ̂ − 1) ที่ปรับแก้แล้ว รายงานเพื่อการอ้างอิง', 'Z(α) = corrected T(ρ̂ − 1), reported for reference.')] });
+      const kRow = (it, R, ser, sp, ok) => [it.name, ser, sp, R.kpss.lags, R.kpss.stat, R.kpss.cv[0], R.kpss.cv[1], R.kpss.cv[3], R.kpss.ptxt, dec(ok, stTxt(true), stTxt(false))];
+      T.push({ title: 'KPSS', cols: [C(L('ตัวแปร', 'Variable'), 't'), C(L('อนุกรม', 'Series'), 't'), C(L('รูปแบบ', 'Spec'), 't'), C('Bandwidth', 'i'), C('LM-stat', 'n3'), C('CV 10%', 'n3'), C('CV 5%', 'n3'), C('CV 1%', 'n3'), C('p-value', 't'), C(L('ผล', 'Result'), 't')],
+        rows: r.items.flatMap(it => [kRow(it, it.level, Lv, lvS, it.stL.kpss), kRow(it, it.diff, Df, dS, it.stD.kpss)]),
+        notes: [L('KPSS (Kwiatkowski–Phillips–Schmidt–Shin) มี H₀: อนุกรมนิ่ง — ตรงข้ามกับ ADF/PP', 'KPSS has H₀: the series is stationary — the reverse of ADF/PP.'),
+          L('LM-stat มากกว่าค่าวิกฤต ⇒ ปฏิเสธความนิ่ง; p-value ประมาณค่าโดย interpolation จากตารางค่าวิกฤต', 'LM-stat above the critical value ⇒ reject stationarity; p-values are interpolated from the critical-value table.')] });
+      T.push({ title: L('สถิติเชิงพรรณนา (ข้อมูลระดับ)', 'Descriptive statistics (levels)'), cols: [C(L('ตัวแปร', 'Variable'), 't'), C('N', 'i'), C(L('ค่าเฉลี่ย', 'Mean')), C('S.D.'), C('Min'), C('Max'), C('Skewness', 'n3'), C('Kurtosis', 'n3'), C('Jarque–Bera', 'n3'), C('p-value', 'p')],
+        rows: r.items.map(it => [it.name, it.desc.n, it.desc.mean, it.desc.sd, it.desc.min, it.desc.max, it.desc.skew, it.desc.kurt, it.desc.JB, it.desc.jbp]),
+        notes: [L('Skewness = 0 และ Kurtosis = 3 สำหรับการแจกแจงปกติ; Jarque–Bera ทดสอบ H₀: แจกแจงปกติ', 'Normal distribution has skewness 0 and kurtosis 3; Jarque–Bera tests H₀: normality.')] });
+      return T;
+    },
+    charts(r) {
+      const out = [];
+      r.items.forEach((it, i) => {
+        const c = PAL[i % PAL.length];
+        out.push(lineSpec(`${it.name} — ${L('ระดับ (Level)', 'Level')}`, r.labels, [ds(it.name, it.y, c)], { legend: false }));
+        out.push(lineSpec(`${it.name} — ${L('ผลต่างอันดับ 1 (Δ)', 'First difference (Δ)')}`, r.labels.slice(1), [ds('Δ' + it.name, it.dy, c), hline('_0', it.dy.length, 0, '#5c667a', [])], { legend: false }));
+        out.push(acfSpec(`ACF — ${it.name} (Level)`, it.acfL, it.y.length, c));
+        out.push(acfSpec(`ACF — Δ${it.name}`, it.acfD, it.dy.length, c));
+      });
+      const names = r.items.map(it => it.name), cv = TS.mean(r.items.map(it => it.level.adf.cv[1]));
+      out.push(barSpec(L('สถิติ ADF เทียบค่าวิกฤต 5%', 'ADF statistics vs 5% critical value'), names, [
+        ds(L('ADF ระดับ', 'ADF level'), r.items.map(it => it.level.adf.stat), PAL[0] + 'cc', { borderWidth: 0 }),
+        ds(L('ADF ผลต่าง', 'ADF difference'), r.items.map(it => it.diff.adf.stat), PAL[1] + 'cc', { borderWidth: 0 }),
+        Object.assign(hline(L('ค่าวิกฤต 5% (ประมาณ)', '5% critical value (approx.)'), names.length, cv, '#c03535'), { borderWidth: 2 })
+      ], { wide: true, sub: L('แท่งที่ต่ำกว่าเส้นสีแดง ⇒ ปฏิเสธ unit root', 'Bars below the red line ⇒ reject the unit root') }));
+      return out;
+    }
+  };
+
+  // ===== COINTEGRATION =====
+  MODS.coint = {
+    tag: 'Engle–Granger · Johansen · ECM', vars: 'multi', minVars: 2, maxVars: 4,
+    name: () => L('Cointegration และ Error Correction Model (ECM)', 'Cointegration & Error Correction Model (ECM)'),
+    short: () => L('ทดสอบความสัมพันธ์ระยะยาวของตัวแปรที่ไม่นิ่ง ด้วยวิธี Engle–Granger และ Johansen พร้อม ECM', 'Test long-run relations among non-stationary variables (Engle–Granger, Johansen) with an ECM'),
+    info: () => ({
+      purpose: L('ตรวจสอบว่าตัวแปร I(1) หลายตัวมีความสัมพันธ์เชิงดุลยภาพระยะยาวร่วมกันหรือไม่ และวัดความเร็วในการปรับตัวกลับสู่ดุลยภาพผ่าน Error Correction Model', 'Checks whether several I(1) variables share a long-run equilibrium and measures the speed of adjustment back to it with an error correction model.'),
+      eq: 'ECM: Δyₜ = c + Σβⱼ Δxⱼₜ + γ·ECTₜ₋₁ + … + εₜ,  ECTₜ = yₜ − α̂ − Σθ̂ⱼ xⱼₜ',
+      method: L('Engle–Granger 2 ขั้น (ค่าวิกฤต MacKinnon 2010), Johansen trace / max-eigenvalue (ค่าคงที่ไม่จำกัด) และ ECM ด้วย OLS', 'Engle–Granger two-step (MacKinnon 2010 CVs), Johansen trace / max-eigenvalue (unrestricted constant) and an OLS ECM.'),
+      data: L('2–4 ตัวแปร (ตัวแรกที่เลือก = ตัวแปรตามใน Engle–Granger/ECM) ควรเป็น I(1)', '2–4 variables (first selected = dependent variable in Engle–Granger/ECM), ideally I(1).')
+    }),
+    settings: [
+      { id: 'eclag', type: 'num', th: 'จำนวน Lag ของ Δ ใน ECM', en: 'Lagged Δ terms in ECM', def: 1, min: 0, max: 6 },
+      { id: 'jlag', type: 'num', th: 'Lag ของ VAR (Johansen)', en: 'VAR lag order (Johansen)', def: 2, min: 1, max: 8 },
+      { id: 'alpha', type: 'sel', th: 'ระดับนัยสำคัญ', en: 'Significance level', def: '0.05', opts: alphaOpts }
+    ],
+    run: (D, s) => TS.runCoint(D, s),
+    summary(r) {
+      const o = [];
+      o.push(L(`Engle–Granger: τ = ${fnum(r.eg.adf.stat, 3)} (CV 5% = ${fnum(r.eg.adf.cv[1], 3)}, p ≈ ${r.eg.p.txt}) → ${r.eg.coint ? 'มี Cointegration' : 'ไม่พบ Cointegration'}`, `Engle–Granger: τ = ${fnum(r.eg.adf.stat, 3)} (5% CV = ${fnum(r.eg.adf.cv[1], 3)}, p ≈ ${r.eg.p.txt}) → ${r.eg.coint ? 'cointegrated' : 'no cointegration'}`));
+      if (r.joh) o.push(L(`Johansen (Trace): จำนวนเวกเตอร์ Cointegration r = ${r.joh.rankT} ; (Max-eigen): r = ${r.joh.rankM}`, `Johansen trace test: cointegrating rank r = ${r.joh.rankT}; max-eigenvalue: r = ${r.joh.rankM}`));
+      o.push(L(`ECM: ค่าสัมประสิทธิ์ ECT(-1) = ${fnum(r.ecm.gamma, 4)} (p = ${fp(r.ecm.gp)}) ${r.ecm.gamma < 0 && r.ecm.gp < 0.05 ? `→ ปรับตัวเข้าสู่ดุลยภาพ ${fnum(-r.ecm.gamma * 100, 1)}% ต่องวด, Half-life ≈ ${fnum(r.ecm.hl, 2)} งวด` : '→ ไม่พบการปรับตัวที่มีนัยสำคัญ'}`, `ECM: ECT(-1) coefficient = ${fnum(r.ecm.gamma, 4)} (p = ${fp(r.ecm.gp)}) ${r.ecm.gamma < 0 && r.ecm.gp < 0.05 ? `→ ${fnum(-r.ecm.gamma * 100, 1)}% of disequilibrium corrected per period; half-life ≈ ${fnum(r.ecm.hl, 2)} periods` : '→ no significant error correction'}`));
+      return o;
+    },
+    tables(r) {
+      const T = [], a = r.alpha, nm = r.names, eg = r.eg, lr = eg.lr;
+      T.push({ title: L('การทดสอบ Unit Root เบื้องต้น (ADF, ค่าคงที่)', 'Pre-test: ADF unit root (intercept)'), cols: [C(L('ตัวแปร', 'Variable'), 't'), C('ADF (Level)', 'n3'), C('p-value', 'p'), C('ADF (Δ)', 'n3'), C('p-value', 'p'), C(L('อันดับ', 'Order'), 't')],
+        rows: r.ur.map(u => [u.name, u.lv.stat, u.lv.p, u.df.stat, u.df.p, { v: ordTxt(u.order), cls: u.order === 1 ? 'ok' : 'bad' }]),
+        notes: [L('Cointegration ต้องการให้ตัวแปรเป็น I(1) ทุกตัว (อันดับ Integration เดียวกัน)', 'Cointegration requires the variables to be I(1) — integrated of the same order.'), L('ถ้ามีตัวแปร I(0) ปนอยู่ ควรพิจารณา ARDL Bounds test หรือ VAR แทน', 'If some variables are I(0), consider an ARDL bounds test or a VAR instead.')] });
+      T.push({ title: L('Engle–Granger ขั้นที่ 1: สมการระยะยาว (Long-run)', 'Engle–Granger step 1: long-run regression'), cols: [C(L('ตัวแปรอิสระ', 'Regressor'), 't'), C('Coef.'), C('Std. Error'), C('t-stat', 'n3'), C('p-value', 'p'), C('Sig.', 't')],
+        rows: [['Constant', ...nm.slice(1)].map((n, j) => [n, lr.b[j], lr.se[j], lr.t[j], lr.p[j], star(lr.p[j])]), [['R²', lr.r2], ['Adj. R²', lr.adjr2], ['Durbin–Watson', lr.dw], ['N', lr.n]].map(x => [x[0], x[1], null, null, null, ''])].flat(),
+        notes: [L(`ตัวแปรตาม: ${nm[0]} — ค่าสัมประสิทธิ์คือความยืดหยุ่น/ผลกระทบระยะยาว (ถ้าข้อมูลเป็น log)`, `Dependent variable: ${nm[0]} — coefficients are long-run effects (elasticities if data are in logs).`),
+          L('ค่า t และ p-value ในขั้นนี้ไม่เป็นไปตามการแจกแจงมาตรฐาน (non-standard) จึงใช้เพื่อการอ้างอิงเท่านั้น', 't-statistics and p-values here have non-standard distributions — use for reference only.'),
+          L('R² สูงร่วมกับ DW ต่ำ อาจเป็นสัญญาณของ Spurious Regression หากส่วนเหลือไม่นิ่ง', 'A high R² with a low DW can indicate spurious regression if the residuals are non-stationary.')] });
+      const ci = a <= 0.01 ? 0 : a <= 0.05 ? 1 : 2;
+      T.push({ title: L('Engle–Granger ขั้นที่ 2: ทดสอบ Unit Root ของส่วนเหลือ', 'Engle–Granger step 2: residual unit-root test'), cols: [C(L('ค่าสถิติ τ', 'τ-statistic'), 'n3'), C('Lags', 'i'), C('Obs', 'i'), C('CV 1%', 'n3'), C('CV 5%', 'n3'), C('CV 10%', 'n3'), C('p-value', 't'), C(L('ผลสรุป', 'Conclusion'), 't')],
+        rows: [[eg.adf.stat, eg.adf.lags, eg.adf.nobs, eg.adf.cv[0], eg.adf.cv[1], eg.adf.cv[2], eg.p.txt, dec(eg.coint, L('มี Cointegration', 'Cointegrated'), L('ไม่มี Cointegration', 'Not cointegrated'))]],
+        notes: [L('ทดสอบ ADF (ไม่มีค่าคงที่) กับส่วนเหลือจากสมการระยะยาว H₀: ส่วนเหลือมี unit root (ไม่มี Cointegration)', 'ADF (no constant) on long-run residuals; H₀: residuals have a unit root (no cointegration).'),
+          L(`ใช้ค่าวิกฤตของ MacKinnon (2010) สำหรับ N = ${eg.N} ตัวแปร ซึ่งติดลบมากกว่า ADF ปกติ เพราะส่วนเหลือมาจากการประมาณค่า`, `MacKinnon (2010) critical values for N = ${eg.N} variables are more negative than standard ADF because residuals are estimated.`),
+          L(`τ < ค่าวิกฤต ${pctA(a)} ⇒ ปฏิเสธ H₀ ⇒ ตัวแปรมีความสัมพันธ์ระยะยาว`, `τ below the ${pctA(a)} critical value ⇒ reject H₀ ⇒ a long-run relationship exists.`)] });
+      const e = r.ecm.fit;
+      T.push({ title: L(`Error Correction Model (ตัวแปรตาม: Δ${nm[0]})`, `Error correction model (dependent: Δ${nm[0]})`), cols: [C(L('ตัวแปร', 'Variable'), 't'), C('Coef.'), C('Std. Error'), C('t-stat', 'n3'), C('p-value', 'p'), C('Sig.', 't')],
+        rows: r.ecm.names.map((n, j) => [{ v: n, cls: n === 'ECT(-1)' ? 'strong' : '' }, e.b[j], e.se[j], e.t[j], e.p[j], star(e.p[j])]),
+        notes: [L('ECT(-1) = ส่วนเหลือจากสมการระยะยาวงวดก่อน (ความคลาดเคลื่อนจากดุลยภาพ) — ควรมีค่าติดลบและมีนัยสำคัญ', 'ECT(-1) is last period’s deviation from equilibrium — it should be negative and significant.'),
+          L('ค่าสัมประสิทธิ์ของ ΔX แสดงผลกระทบระยะสั้น ส่วน ECT(-1) แสดงความเร็วการปรับตัว (speed of adjustment)', 'ΔX coefficients are short-run effects; the ECT(-1) coefficient is the speed of adjustment.'),
+          L('ค่าระหว่าง −1 ถึง 0 หมายถึงการปรับตัวแบบค่อยเป็นค่อยไป; Half-life = ln(0.5)/ln(1+γ)', 'Values between −1 and 0 imply gradual adjustment; half-life = ln(0.5)/ln(1+γ).')] });
+      T.push({ title: L('สถิติของสมการ ECM', 'ECM statistics'), cols: [C(L('สถิติ', 'Statistic'), 't'), C(L('ค่า', 'Value')), C(L('คำอธิบาย', 'Meaning'), 't')], rows: [
+        ['R²', e.r2, L('สัดส่วนความผันแปรของ Δy ที่อธิบายได้', 'Share of Δy variation explained')], ['Adj. R²', e.adjr2, L('R² ปรับด้วยจำนวนตัวแปร', 'R² adjusted for regressors')],
+        ['F-stat', e.F, L('ทดสอบนัยสำคัญรวมของสมการ', 'Joint significance')], ['p (F)', e.Fp, ''], ['Durbin–Watson', e.dw, L('ใกล้ 2 = ไม่มี autocorrelation', '≈2 means no autocorrelation')],
+        ['S.E. of regression', e.ser, ''], ['Log-likelihood', e.ll, ''], ['AIC', e.aic, ''], ['BIC', e.bic, ''], ['N', e.n, ''],
+        [L('ความเร็วการปรับตัว (ต่องวด)', 'Speed of adjustment (per period)'), -r.ecm.gamma, L('สัดส่วนของความคลาดเคลื่อนจากดุลยภาพที่ถูกแก้ไขในแต่ละงวด', 'Share of disequilibrium corrected each period')],
+        ['Half-life (' + L('งวด', 'periods') + ')', r.ecm.hl, L('ระยะเวลาที่ความคลาดเคลื่อนลดลงครึ่งหนึ่ง', 'Time for half of a deviation to dissipate')]],
+        notes: [L('ECM ใช้ OLS เพราะทุกตัวแปรในสมการนิ่ง (Δ และ ECT เป็น I(0)) จึงใช้การอนุมานทางสถิติปกติได้', 'The ECM is estimated by OLS; all terms (Δ and ECT) are I(0), so standard inference applies.')] });
+      if (r.joh) {
+        const J = r.joh, k = J.k, cl = [C('H₀', 't'), C('H₁', 't'), C(L('ค่าไอเกน', 'Eigenvalue')), C(L('ค่าสถิติ', 'Statistic'), 'n3'), C('CV 10%', 'n3'), C('CV 5%', 'n3'), C('CV 1%', 'n3'), C(L('ผล', 'Result'), 't')];
+        T.push({ title: L(`Johansen: Trace test (VAR lag = ${r.jp})`, `Johansen trace test (VAR lag = ${r.jp})`), cols: cl,
+          rows: J.trace.map(t => ['r ≤ ' + t.r, 'r > ' + t.r, t.eig, t.stat, t.cv[0], t.cv[1], t.cv[2], dec(t.stat > t.cv[J.ci], L('ปฏิเสธ H₀', 'Reject H₀'), L('ไม่ปฏิเสธ H₀', 'Do not reject'))]),
+          notes: [L('Trace = −T Σ ln(1−λᵢ) ทดสอบ H₀: จำนวนเวกเตอร์ Cointegration ≤ r ไล่จาก r = 0 จนกว่าจะไม่ปฏิเสธ H₀', 'Trace = −T Σ ln(1−λᵢ) tests H₀: rank ≤ r, starting at r = 0 until H₀ is not rejected.'),
+            L(`ผลลัพธ์: rank = ${J.rankT} (ที่ระดับ ${pctA(a)}) — ค่าวิกฤตแบบมีค่าคงที่ไม่จำกัด (Osterwald-Lenum / MacKinnon–Haug–Michelis)`, `Result: rank = ${J.rankT} at ${pctA(a)} — unrestricted-constant critical values (Osterwald-Lenum / MacKinnon–Haug–Michelis).`)] });
+        T.push({ title: L('Johansen: Maximum eigenvalue test', 'Johansen maximum eigenvalue test'), cols: cl,
+          rows: J.maxe.map(t => ['r = ' + t.r, 'r = ' + (t.r + 1), t.eig, t.stat, t.cv[0], t.cv[1], t.cv[2], dec(t.stat > t.cv[J.ci], L('ปฏิเสธ H₀', 'Reject H₀'), L('ไม่ปฏิเสธ H₀', 'Do not reject'))]),
+          notes: [L('λ-max = −T ln(1−λᵣ₊₁) ทดสอบ H₀: rank = r กับ H₁: rank = r+1', 'λ-max = −T ln(1−λᵣ₊₁) tests H₀: rank = r against H₁: rank = r+1.'), L(`ผลลัพธ์: rank = ${J.rankM}; หาก Trace และ Max-eigen ขัดแย้งกัน มักให้น้ำหนักกับ Trace test`, `Result: rank = ${J.rankM}; if trace and max-eigen disagree, the trace test is usually preferred.`)] });
+        T.push({ title: L(`เวกเตอร์ Cointegration ที่ปรับมาตรฐาน (β, r = ${J.useR})`, `Normalised cointegrating vector(s) (β, r = ${J.useR})`), cols: [C(L('ตัวแปร', 'Variable'), 't'), ...range(J.useR).map(c => C('β' + (c + 1)))],
+          rows: nm.map((n, i) => [n, ...range(J.useR).map(c => J.betaN[i][c])]),
+          notes: [L('ปรับมาตรฐานให้ตัวแปรแรกมีค่า 1: ECT = y₁ + β₂y₂ + … ⇒ ความสัมพันธ์ระยะยาว y₁ = −β₂y₂ − …', 'Normalised on the first variable: ECT = y₁ + β₂y₂ + … ⇒ long run y₁ = −β₂y₂ − …'),
+            L('เครื่องหมายของ β ตรงข้ามกับความสัมพันธ์ระยะยาว (เช่น β₂ = −0.9 ⇒ y₁ เพิ่ม 0.9 เมื่อ y₂ เพิ่ม 1)', 'Signs are reversed relative to the long-run relation (e.g. β₂ = −0.9 ⇒ y₁ rises 0.9 when y₂ rises 1).')] });
+        T.push({ title: L('ค่าสัมประสิทธิ์การปรับตัว (α) จาก VECM', 'Adjustment coefficients (α) from the VECM'), cols: [C(L('สมการ', 'Equation'), 't'), C('ECT', 't'), C('α'), C('Std. Error'), C('t-stat', 'n3'), C('p-value', 'p'), C('Sig.', 't')],
+          rows: J.alphaEq.flatMap((eqA, i) => eqA.map((x, c) => ['Δ' + nm[i], 'ECT' + (c + 1), x.coef, x.se, x.t, x.p, star(x.p)])),
+          notes: [L('α แสดงว่าตัวแปรใดปรับตัวเมื่อเกิดความคลาดเคลื่อนจากดุลยภาพ; α ไม่มีนัยสำคัญ ⇒ ตัวแปรนั้นเป็น weakly exogenous', 'α shows which variables adjust to disequilibrium; an insignificant α means that variable is weakly exogenous.')] });
+      } else if (r.johErr) T.push({ title: 'Johansen', cols: [C(L('หมายเหตุ', 'Note'), 't')], rows: [[L('ไม่สามารถคำนวณ Johansen ได้: ', 'Johansen could not be computed: ') + r.johErr]], notes: [] });
+      return T;
+    },
+    charts(r) {
+      const out = [], nm = r.names, n = r.labels.length;
+      out.push(lineSpec(L('ตัวแปรทั้งหมด (ปรับมาตรฐาน z-score)', 'All variables (standardised z-scores)'), r.labels, nm.map((v, i) => { const x = r.cols[v], m = TS.mean(x), s = TS.std(x); return ds(v, x.map(t => (t - m) / s), PAL[i % 8]); }), { wide: true }));
+      out.push(lineSpec(L(`${nm[0]}: ค่าจริงเทียบดุลยภาพระยะยาว`, `${nm[0]}: actual vs long-run equilibrium`), r.labels, [ds(L('ค่าจริง', 'Actual'), r.cols[nm[0]], '#142033'), ds(L('ดุลยภาพระยะยาว', 'Long-run fit'), r.eg.fitted, PAL[1], { borderDash: [5, 3] })]));
+      out.push(lineSpec(L('ส่วนเหลือระยะยาว (ECT)', 'Long-run residual (ECT)'), r.labels, [ds('ECT', r.eg.u, PAL[2], { fill: { target: 'origin', above: 'rgba(23,132,90,.12)', below: 'rgba(192,53,53,.12)' } }), hline('_0', n, 0, '#5c667a', [])], { legend: false, sub: L('ควรแกว่งรอบศูนย์ (นิ่ง) หากมี Cointegration', 'Should fluctuate around zero (stationary) under cointegration') }));
+      out.push(acfSpec('ACF — ECT', r.acfU, n, PAL[2]));
+      const x1 = r.cols[nm[1]], y = r.cols[nm[0]], pts = x1.map((v, i) => ({ x: v, y: y[i] }));
+      const ols = TS.ols(y, x1.map(v => [1, v])), mn = Math.min(...x1), mx = Math.max(...x1);
+      out.push({ title: `${nm[0]} vs ${nm[1]}`, cfg: { type: 'scatter', data: { datasets: [ds(L('ข้อมูล', 'Data'), pts, PAL[0] + '99', { pointRadius: 2.6 }), ds(L('เส้นถดถอย', 'Fitted line'), [{ x: mn, y: ols.b[0] + ols.b[1] * mn }, { x: mx, y: ols.b[0] + ols.b[1] * mx }], '#c03535', { showLine: true, borderWidth: 2 })] }, options: baseOpts(`${nm[0]} vs ${nm[1]} (scatter)`, { xType: 'linear', xTitle: nm[1], yTitle: nm[0], mode: 'nearest', xGrid: true }) } });
+      const lab = r.ecm.idx.map(t => r.labels[t]);
+      out.push(lineSpec(L(`ECM: Δ${nm[0]} จริง เทียบค่าประมาณ`, `ECM: actual vs fitted Δ${nm[0]}`), lab, [ds(L('จริง', 'Actual'), r.ecm.fit.fitted.map((f, i) => f + r.ecm.fit.resid[i]), '#142033'), ds(L('ประมาณ', 'Fitted'), r.ecm.fit.fitted, PAL[1], { borderDash: [4, 3] })]));
+      if (r.joh) {
+        const J = r.joh, lb = J.trace.map(t => 'r ≤ ' + t.r);
+        out.push(barSpec(L('Johansen Trace statistic เทียบค่าวิกฤต 5%', 'Johansen trace statistic vs 5% CV'), lb, [ds('Trace', J.trace.map(t => t.stat), PAL[0] + 'cc', { borderWidth: 0 }), ds('CV 5%', J.trace.map(t => t.cv[1]), '#c03535', { type: 'line', borderWidth: 2, pointRadius: 4, borderDash: [5, 3] })]));
+        out.push(barSpec(L('Johansen Max-eigen statistic เทียบค่าวิกฤต 5%', 'Johansen max-eigen statistic vs 5% CV'), J.maxe.map(t => 'r = ' + t.r), [ds('λ-max', J.maxe.map(t => t.stat), PAL[4] + 'cc', { borderWidth: 0 }), ds('CV 5%', J.maxe.map(t => t.cv[1]), '#c03535', { type: 'line', borderWidth: 2, pointRadius: 4, borderDash: [5, 3] })]));
+      }
+      return out;
+    }
+  };
+
+  // ===== VAR / VECM =====
+  MODS.var = {
+    tag: 'VAR · VECM', vars: 'multi', minVars: 2, maxVars: 6,
+    name: () => L('VAR (Vector Autoregression) และ VECM', 'VAR (Vector Autoregression) & VECM'),
+    short: () => L('ทุกตัวแปรเป็นตัวแปรตามซึ่งกันและกัน เหมาะกับการดูผลย้อนกลับ (Feedback effect) และ Granger causality', 'All variables are jointly endogenous — ideal for feedback effects and Granger causality'),
+    info: () => ({
+      purpose: L('สร้างระบบสมการที่แต่ละตัวแปรถูกอธิบายด้วยค่าล่าช้าของตัวเองและของตัวแปรอื่น เพื่อวิเคราะห์ความสัมพันธ์แบบพลวัตและผลย้อนกลับ; VECM ใช้เมื่อตัวแปร I(1) มี Cointegration', 'Builds a system where every variable depends on its own lags and the lags of the others, capturing dynamic interactions and feedback; the VECM is used when I(1) variables are cointegrated.'),
+      eq: 'VAR(p): yₜ = c + A₁yₜ₋₁ + … + Aₚyₜ₋ₚ + uₜ ;  VECM: Δyₜ = αβ′yₜ₋₁ + ΣΓᵢΔyₜ₋ᵢ + c + uₜ',
+      method: L('OLS รายสมการ, เลือก Lag ด้วย AIC/BIC/HQ/FPE, Granger causality (F-test), ตรวจเสถียรภาพจากรากของ companion matrix; VECM ใช้ β จาก Johansen', 'Equation-by-equation OLS; lag selection by AIC/BIC/HQ/FPE; Granger causality F-tests; stability via companion roots; VECM uses Johansen β.'),
+      data: L('2–6 ตัวแปร; VAR ควรใช้ข้อมูลนิ่ง (หรือแปลงเป็นผลต่าง/อัตราการเปลี่ยนแปลง), VECM ใช้ข้อมูลระดับที่เป็น I(1)', '2–6 variables; a VAR should use stationary data (or differences/growth rates), a VECM uses I(1) levels.')
+    }),
+    settings: [
+      { id: 'model', type: 'sel', th: 'แบบจำลอง', en: 'Model', def: 'var', opts: [['var', 'VAR (ข้อมูลนิ่ง)', 'VAR (stationary data)'], ['vecm', 'VECM (ข้อมูล I(1) ที่มี Cointegration)', 'VECM (cointegrated I(1) data)']] },
+      { id: 'transform', type: 'sel', th: 'การแปลงข้อมูล', en: 'Transformation', def: 'none', opts: transOpts },
+      { id: 'crit', type: 'sel', th: 'เกณฑ์เลือก Lag', en: 'Lag selection criterion', def: 'aic', opts: critOpts },
+      { id: 'lag', type: 'num', th: 'Lag (กรณีกำหนดเอง)', en: 'Lag (if fixed)', def: 2, min: 1, max: 12 },
+      { id: 'maxlag', type: 'num', th: 'Lag สูงสุดในการค้นหา', en: 'Maximum lag searched', def: 8, min: 1, max: 12 },
+      { id: 'rank', type: 'sel', th: 'Cointegration rank (VECM)', en: 'Cointegration rank (VECM)', def: 'auto', opts: [['auto', 'อัตโนมัติ (Johansen trace 5%)', 'Auto (Johansen trace 5%)'], ['1', 'r = 1', 'r = 1'], ['2', 'r = 2', 'r = 2'], ['3', 'r = 3', 'r = 3']] }
+    ],
+    run: (D, s) => TS.runVar(D, s),
+    summary(r) {
+      if (r.vecm) return [L(`VECM: Lag (ระดับ) = ${r.p}, Cointegration rank r = ${r.r} (Johansen trace แนะนำ r = ${r.rankAuto})`, `VECM with level-lag p = ${r.p}, cointegrating rank r = ${r.r} (Johansen trace suggests r = ${r.rankAuto})`),
+        ...r.vecm.eqs.map((e, i) => L(`Δ${r.names[i]}: α = ${fnum(e.b[0], 4)} (p = ${fp(e.p[0])})${e.p[0] < 0.05 ? ' ปรับตัวเข้าหาดุลยภาพอย่างมีนัยสำคัญ' : ' ไม่ปรับตัว (weakly exogenous)'}`, `Δ${r.names[i]}: α = ${fnum(e.b[0], 4)} (p = ${fp(e.p[0])})${e.p[0] < 0.05 ? ' — adjusts significantly' : ' — weakly exogenous'}`))];
+      const sig = r.granger.filter(g => g.p < 0.05).map(g => `${r.names[g.cause]} → ${r.names[g.effect]}`);
+      const maxm = r.roots[0].mod;
+      const o = [L(`VAR(${r.p}) เลือกด้วย ${r.crit.toUpperCase()} — N = ${r.fit.n}, Log-lik = ${fnum(r.fit.ll, 2)}`, `VAR(${r.p}) selected by ${r.crit.toUpperCase()} — N = ${r.fit.n}, log-lik = ${fnum(r.fit.ll, 2)}`),
+        maxm < 1 ? L(`ระบบมีเสถียรภาพ (รากสูงสุด = ${fnum(maxm, 4)} < 1)`, `System is stable (largest root modulus = ${fnum(maxm, 4)} < 1)`) : L(`ระบบไม่มีเสถียรภาพ (รากสูงสุด = ${fnum(maxm, 4)} ≥ 1) ควรแปลงข้อมูลหรือใช้ VECM`, `System is NOT stable (largest root = ${fnum(maxm, 4)} ≥ 1) — transform the data or use a VECM`),
+        sig.length ? L('Granger causality ที่มีนัยสำคัญ 5%: ' + sig.join(', '), 'Significant Granger causality (5%): ' + sig.join(', ')) : L('ไม่พบ Granger causality ที่มีนัยสำคัญที่ 5%', 'No significant Granger causality at 5%')];
+      if (r.vecmNote) o.unshift(r.vecmNote === 'R0' ? L('Johansen ไม่พบ Cointegration (r = 0) จึงประมาณค่า VAR ในรูปผลต่างแทน VECM', 'Johansen found no cointegration (r = 0), so a VAR in differences was estimated instead of a VECM') : L('Johansen ให้ rank เต็ม (ข้อมูลนิ่ง) จึงประมาณค่า VAR ในระดับแทน VECM', 'Johansen indicates full rank (stationary data), so a VAR in levels was estimated instead'));
+      return o;
+    },
+    tables(r) {
+      const T = [], nm = r.names, k = nm.length;
+      const sel = r.sel, b = sel.best;
+      T.push({ title: L('การเลือกจำนวน Lag ที่เหมาะสม', 'Lag order selection'), cols: [C('Lag', 'i'), C('Log-lik', 'n3'), C('AIC'), C('BIC (SC)'), C('HQ'), C('FPE', 'n6')],
+        rows: sel.table.map(x => [x.p, x.ll, { v: fnum(x.aic) + (x.p === b.aic ? ' *' : ''), cls: x.p === b.aic ? 'strong' : '' }, { v: fnum(x.bic) + (x.p === b.bic ? ' *' : ''), cls: x.p === b.bic ? 'strong' : '' }, { v: fnum(x.hq) + (x.p === b.hq ? ' *' : ''), cls: x.p === b.hq ? 'strong' : '' }, { v: fnum(x.fpe, 6) + (x.p === b.fpe ? ' *' : ''), cls: x.p === b.fpe ? 'strong' : '' }]),
+        notes: [L('* = Lag ที่ทำให้เกณฑ์นั้นต่ำที่สุด; ทุก Lag ใช้ตัวอย่างเดียวกันเพื่อให้เปรียบเทียบได้', '* = lag that minimises the criterion; all lags use a common sample for comparability.'), L('AIC มักเลือก Lag มากกว่า BIC/HQ; BIC เหมาะกับตัวอย่างใหญ่ (consistent)', 'AIC tends to pick longer lags than BIC/HQ; BIC is consistent in large samples.')] });
+      if (r.vecm) return T.concat(vecmTables(r));
+      const f = r.fit;
+      T.push({ title: L('สรุปแบบจำลอง VAR', 'VAR model summary'), cols: [C(L('รายการ', 'Item'), 't'), C(L('ค่า', 'Value'), 't')], rows: [
+        [L('ตัวแปร (ลำดับ)', 'Variables (order)'), nm.join(', ')], [L('การแปลงข้อมูล', 'Transformation'), transName(r.transform)], [L('จำนวน Lag (p)', 'Lag order (p)'), String(f.p)],
+        [L('จำนวนข้อมูลที่ใช้', 'Observations used'), String(f.n)], [L('พารามิเตอร์ต่อสมการ', 'Parameters per equation'), String(f.m)], ['Log-likelihood', fnum(f.ll, 3)], ['AIC', fnum(f.aic)], ['BIC (SC)', fnum(f.bic)], ['HQ', fnum(f.hq)],
+        ['det(Σᵤ) ML', fnum(f.detSig, 6)], [L('รากที่ใหญ่ที่สุด (Modulus)', 'Largest root modulus'), fnum(r.roots[0].mod)], [L('เสถียรภาพ', 'Stability'), r.roots[0].mod < 1 ? L('มีเสถียรภาพ ✓', 'Stable ✓') : L('ไม่มีเสถียรภาพ ✗', 'Not stable ✗')]],
+        notes: [L('ประมาณค่าด้วย OLS ทีละสมการ (มีประสิทธิภาพเท่ากับ SUR เพราะตัวแปรอธิบายเหมือนกันทุกสมการ)', 'Estimated by equation-wise OLS (as efficient as SUR because all equations share regressors).'), L('VAR มีเสถียรภาพเมื่อรากทุกตัวของ companion matrix อยู่ในวงกลมหนึ่งหน่วย (modulus < 1)', 'The VAR is stable if all companion-matrix roots lie inside the unit circle (modulus < 1).')] });
+      const rn = ['const', ...range(f.p).flatMap(l => nm.map(v => `${v}(-${l + 1})`))];
+      f.eqs.forEach((e, i) => T.push({ title: L(`สมการที่ ${i + 1}: ${nm[i]}`, `Equation ${i + 1}: ${nm[i]}`), cols: [C(L('ตัวแปรอธิบาย', 'Regressor'), 't'), C('Coef.'), C('Std. Error'), C('t-stat', 'n3'), C('p-value', 'p'), C('Sig.', 't')],
+        rows: rn.map((n, j) => [n, e.b[j], e.se[j], e.t[j], e.p[j], star(e.p[j])]),
+        notes: [L(`R² = ${fnum(e.r2)}, Adj. R² = ${fnum(e.adj)}, F = ${fnum(e.F, 3)} (p = ${fp(e.Fp)}), DW = ${fnum(e.dw, 3)}`, `R² = ${fnum(e.r2)}, Adj. R² = ${fnum(e.adj)}, F = ${fnum(e.F, 3)} (p = ${fp(e.Fp)}), DW = ${fnum(e.dw, 3)}`),
+          L('ค่าสัมประสิทธิ์รายตัวใน VAR ตีความโดยตรงได้ยาก — ควรดูร่วมกับ Granger causality, IRF และ FEVD', 'Individual VAR coefficients are hard to interpret alone — read them with Granger causality, IRFs and FEVD.')] }));
+      T.push({ title: L('สถิติรายสมการ', 'Equation statistics'), cols: [C(L('สมการ', 'Equation'), 't'), C('R²'), C('Adj. R²'), C('F-stat', 'n3'), C('p (F)', 'p'), C('S.E.'), C('Durbin–Watson', 'n3'), C('LB Q(10)', 'n3'), C('p (LB)', 'p'), C('JB', 'n3'), C('p (JB)', 'p')],
+        rows: f.eqs.map((e, i) => [nm[i], e.r2, e.adj, e.F, e.Fp, e.ser, e.dw, r.diag[i].lb.Q, r.diag[i].lb.p, r.diag[i].jb.JB, r.diag[i].jb.p]),
+        notes: [L('Ljung–Box (LB) ทดสอบ autocorrelation ของส่วนเหลือ (p > 0.05 ดี); Jarque–Bera (JB) ทดสอบความเป็นปกติ', 'Ljung–Box (LB) tests residual autocorrelation (p > 0.05 is good); Jarque–Bera (JB) tests normality.')] });
+      T.push({ title: L('การทดสอบ Granger Causality (Wald F-test)', 'Granger causality tests (Wald F)'), cols: [C(L('สมมติฐาน H₀', 'Null hypothesis'), 't'), C('F-stat', 'n3'), C('df1', 'i'), C('df2', 'i'), C('p-value', 'p'), C(L('ผลสรุป', 'Conclusion'), 't')],
+        rows: r.granger.map(g => [L(`${nm[g.cause]} ไม่เป็นสาเหตุ (Granger) ของ ${nm[g.effect]}`, `${nm[g.cause]} does not Granger-cause ${nm[g.effect]}`), g.F, g.df1, g.df2, g.p, dec(g.p < 0.05, L(`${nm[g.cause]} → ${nm[g.effect]}`, `${nm[g.cause]} → ${nm[g.effect]}`), L('ไม่เป็นสาเหตุ', 'No causality'))]),
+        notes: [L('ทดสอบว่าค่าล่าช้าทั้ง p ตัวของตัวแปรสาเหตุ มีค่าเป็นศูนย์พร้อมกันในสมการของตัวแปรผล', 'Tests whether all p lags of the causing variable are jointly zero in the effect variable’s equation.'),
+          L('p < 0.05 ⇒ ค่าในอดีตของ X ช่วยพยากรณ์ Y ได้ (เชิงพยากรณ์ ไม่ใช่เหตุผลเชิงโครงสร้าง); ถ้าเป็นทั้งสองทาง แสดงว่ามี Feedback effect', 'p < 0.05 ⇒ past X helps predict Y (predictive, not structural causality); significance in both directions indicates feedback.')] });
+      T.push({ title: L('เมทริกซ์สหสัมพันธ์ของส่วนเหลือ', 'Residual correlation matrix'), cols: [C('', 't'), ...nm.map(v => C(v))], rows: r.corr.map((row, i) => [nm[i], ...row]),
+        notes: [L('สหสัมพันธ์สูงระหว่างส่วนเหลือ (contemporaneous) แสดงว่าลำดับตัวแปรใน Cholesky IRF มีผลต่อผลลัพธ์', 'High contemporaneous residual correlation means the Cholesky ordering matters for IRFs.')] });
+      T.push({ title: L('รากของ Companion matrix (เสถียรภาพ)', 'Companion-matrix roots (stability)'), cols: [C('#', 'i'), C(L('ส่วนจริง', 'Real')), C(L('ส่วนจินตภาพ', 'Imaginary')), C('Modulus'), C(L('ผล', 'Result'), 't')],
+        rows: r.roots.map((x, i) => [i + 1, x.re, x.im, x.mod, dec(x.mod < 1, L('ภายในวงกลม', 'Inside'), L('นอก/บนวงกลม', 'Outside/on'))]),
+        notes: [L('จำนวนราก = k × p; ทุกรากต้องมี modulus < 1 จึงจะมีเสถียรภาพ (IRF ลู่เข้าศูนย์)', 'There are k × p roots; all must have modulus < 1 for stability (IRFs then die out).')] });
+      return T;
+    },
+    charts(r) {
+      const out = [], nm = r.names;
+      if (r.vecm) {
+        const v = r.vecm, lb = v.lbl;
+        range(v.r).forEach(c => out.push(lineSpec(`ECT${c + 1} = β′yₜ₋₁`, lb, [ds('ECT' + (c + 1), v.ect.map(e => e[c]), PAL[2]), hline('_m', lb.length, TS.mean(v.ect.map(e => e[c])))], { legend: false })));
+        v.eqs.forEach((e, i) => out.push(lineSpec(L(`Δ${nm[i]}: จริง เทียบ ค่าประมาณ`, `Δ${nm[i]}: actual vs fitted`), lb, [ds(L('จริง', 'Actual'), v.Yd.map(x => x[i]), '#142033'), ds(L('ประมาณ', 'Fitted'), e.fitted, PAL[i % 8], { borderDash: [4, 3] })])));
+        v.eqs.forEach((e, i) => out.push(lineSpec(L(`ส่วนเหลือ: Δ${nm[i]}`, `Residuals: Δ${nm[i]}`), lb, [ds('u', e.resid, PAL[i % 8]), hline('_0', lb.length, 0, '#5c667a', [])], { legend: false })));
+        const J = r.joh; out.push(barSpec(L('Johansen Trace เทียบค่าวิกฤต 5%', 'Johansen trace vs 5% CV'), J.trace.map(t => 'r ≤ ' + t.r), [ds('Trace', J.trace.map(t => t.stat), PAL[0] + 'cc', { borderWidth: 0 }), ds('CV 5%', J.trace.map(t => t.cv[1]), '#c03535', { type: 'line', borderWidth: 2, pointRadius: 4, borderDash: [5, 3] })]));
+        return out;
+      }
+      const f = r.fit, lb = r.fitLabels;
+      f.eqs.forEach((e, i) => out.push(lineSpec(L(`${nm[i]}: จริง เทียบ ค่าประมาณ`, `${nm[i]}: actual vs fitted`), lb, [ds(L('จริง', 'Actual'), e.actual, '#142033'), ds(L('ประมาณ', 'Fitted'), e.fitted, PAL[i % 8], { borderDash: [4, 3] })])));
+      f.eqs.forEach((e, i) => out.push(lineSpec(L(`ส่วนเหลือ: ${nm[i]}`, `Residuals: ${nm[i]}`), lb, [ds('u', e.resid, PAL[i % 8]), hline('_0', lb.length, 0, '#5c667a', [])], { legend: false })));
+      out.push(lineSpec(L('เกณฑ์การเลือก Lag', 'Lag selection criteria'), r.sel.table.map(x => String(x.p)), [ds('AIC', r.sel.table.map(x => x.aic), PAL[0], { pointRadius: 3 }), ds('BIC', r.sel.table.map(x => x.bic), PAL[1], { pointRadius: 3 }), ds('HQ', r.sel.table.map(x => x.hq), PAL[2], { pointRadius: 3 })], { xTitle: 'Lag' }));
+      out.push(circleSpec(L('รากของ VAR เทียบวงกลมหนึ่งหน่วย', 'VAR roots and the unit circle'), r.roots));
+      out.push(barSpec(L('Granger causality: p-value', 'Granger causality: p-values'), r.granger.map(g => `${nm[g.cause]}→${nm[g.effect]}`), [ds('p-value', r.granger.map(g => g.p), r.granger.map(g => (g.p < 0.05 ? PAL[2] : '#a8b1c3')), { borderWidth: 0 }), Object.assign(hline('α = 0.05', r.granger.length, 0.05, '#c03535'), { borderWidth: 2 })], { ymin: 0, ymax: 1, sub: L('แท่งสีเขียว = มีนัยสำคัญที่ 5%', 'Green bars = significant at 5%') }));
+      return out;
+    }
+  };
+  function transName(t) { return { none: L('ระดับ (ไม่แปลง)', 'Levels'), diff: L('ผลต่างอันดับ 1', 'First difference'), log: 'ln(y)', logdiff: 'Δln(y)×100' }[t] || t; }
+  function vecmTables(r) {
+    const v = r.vecm, nm = r.names, T = [], J = r.joh;
+    T.push({ title: L(`Johansen trace test (lag = ${r.p})`, `Johansen trace test (lag = ${r.p})`), cols: [C('H₀', 't'), C(L('ค่าไอเกน', 'Eigenvalue')), C('Trace', 'n3'), C('CV 5%', 'n3'), C('CV 1%', 'n3'), C(L('ผล', 'Result'), 't')],
+      rows: J.trace.map(t => ['r ≤ ' + t.r, t.eig, t.stat, t.cv[1], t.cv[2], dec(t.stat > t.cv[1], L('ปฏิเสธ H₀', 'Reject H₀'), L('ไม่ปฏิเสธ', 'Do not reject'))]),
+      notes: [L(`Rank ที่ใช้ = ${r.r} (${String(r.r) === String(r.rankAuto) ? 'ตามผลทดสอบ' : 'กำหนดโดยผู้ใช้'})`, `Rank used = ${r.r} (${String(r.r) === String(r.rankAuto) ? 'from the test' : 'user-specified'})`)] });
+    T.push({ title: L('เวกเตอร์ Cointegration (β ปรับมาตรฐาน)', 'Cointegrating vectors (normalised β)'), cols: [C(L('ตัวแปร', 'Variable'), 't'), ...range(v.r).map(c => C('β' + (c + 1)))], rows: nm.map((n, i) => [n, ...range(v.r).map(c => v.beta[i][c])]),
+      notes: [L('ECTⱼ = β′ⱼ yₜ₋₁ คือความคลาดเคลื่อนจากดุลยภาพระยะยาว (ตัวแปรแรก r ตัวถูกปรับให้เป็นเมทริกซ์เอกลักษณ์)', 'ECTⱼ = β′ⱼ yₜ₋₁ is the deviation from long-run equilibrium (first r variables normalised to identity).')] });
+    const rn = [...range(v.r).map(c => 'ECT' + (c + 1) + '(-1)'), ...range(v.p - 1).flatMap(l => nm.map(x => `Δ${x}(-${l + 1})`)), 'const'];
+    v.eqs.forEach((e, i) => T.push({ title: L(`สมการ VECM: Δ${nm[i]}`, `VECM equation: Δ${nm[i]}`), cols: [C(L('ตัวแปรอธิบาย', 'Regressor'), 't'), C('Coef.'), C('Std. Error'), C('t-stat', 'n3'), C('p-value', 'p'), C('Sig.', 't')],
+      rows: rn.map((n, j) => [{ v: n, cls: j < v.r ? 'strong' : '' }, e.b[j], e.se[j], e.t[j], e.p[j], star(e.p[j])]),
+      notes: [L(`R² = ${fnum(e.r2)}, Adj. R² = ${fnum(e.adjr2)}, DW = ${fnum(e.dw, 3)}, N = ${e.n}`, `R² = ${fnum(e.r2)}, Adj. R² = ${fnum(e.adjr2)}, DW = ${fnum(e.dw, 3)}, N = ${e.n}`), L('ค่าสัมประสิทธิ์ของ ECT คือ α (speed of adjustment) — ค่าลบและมีนัยสำคัญหมายถึงตัวแปรนั้นปรับตัวกลับสู่ดุลยภาพ; ΔX(-i) คือผลระยะสั้น Γ', 'ECT coefficients are α (speed of adjustment) — negative and significant means the variable corrects toward equilibrium; ΔX(-i) terms are short-run Γ effects.')] }));
+    return T;
+  }
+
+  // ===== IRF & FEVD =====
+  MODS.irf = {
+    tag: 'IRF · FEVD', vars: 'multi', minVars: 2, maxVars: 6,
+    name: () => L('Impulse Response Function (IRF) และ Variance Decomposition', 'Impulse Response (IRF) & Variance Decomposition'),
+    short: () => L('วัดการตอบสนองต่อ Shock ของตัวแปรหนึ่ง และสัดส่วนความแปรปรวนที่แต่ละ Shock อธิบายได้', 'Trace responses to a shock in one variable and the share of variance each shock explains'),
+    info: () => ({
+      purpose: L('จาก VAR ที่ประมาณค่าได้ วิเคราะห์ว่าเมื่อเกิด Shock ขนาด 1 S.D. ในตัวแปรหนึ่ง ตัวแปรอื่นตอบสนองอย่างไรตามเวลา และ Shock แต่ละตัวอธิบายความแปรปรวนของการพยากรณ์ได้กี่เปอร์เซ็นต์', 'From an estimated VAR, traces how each variable responds over time to a one-S.D. shock in another, and how much of each forecast-error variance every shock explains.'),
+      eq: 'yₜ = μ + Σ Φᵢ P εₜ₋ᵢ ,  Σᵤ = PP′ (Cholesky);  FEVD = Σ θ²ᵢⱼ,ₕ / MSEᵢ(h)',
+      method: L('Orthogonalised IRF (Cholesky ตามลำดับตัวแปร) หรือ Generalised IRF (Pesaran–Shin), ช่วงความเชื่อมั่น 95% ด้วย residual bootstrap', 'Orthogonalised (Cholesky, variable order) or generalised (Pesaran–Shin) IRFs with 95% residual-bootstrap bands.'),
+      data: L('2–6 ตัวแปรที่นิ่ง (ลำดับคอลัมน์ = ลำดับ Cholesky: ตัวแปรแรกได้รับผลกระทบน้อยที่สุดในทันที)', '2–6 stationary variables (column order = Cholesky order: the first is the most contemporaneously exogenous).')
+    }),
+    settings: [
+      { id: 'transform', type: 'sel', th: 'การแปลงข้อมูล', en: 'Transformation', def: 'none', opts: transOpts },
+      { id: 'crit', type: 'sel', th: 'เกณฑ์เลือก Lag', en: 'Lag selection criterion', def: 'aic', opts: critOpts },
+      { id: 'lag', type: 'num', th: 'Lag (กรณีกำหนดเอง)', en: 'Lag (if fixed)', def: 2, min: 1, max: 12 },
+      { id: 'maxlag', type: 'num', th: 'Lag สูงสุดในการค้นหา', en: 'Maximum lag searched', def: 8, min: 1, max: 12 },
+      { id: 'horizon', type: 'num', th: 'จำนวนช่วงเวลา (Horizon)', en: 'Horizon (periods)', def: 12, min: 2, max: 48 },
+      { id: 'type', type: 'sel', th: 'ชนิด IRF', en: 'IRF type', def: 'orth', opts: [['orth', 'Orthogonalised (Cholesky)', 'Orthogonalised (Cholesky)'], ['gen', 'Generalised (Pesaran–Shin)', 'Generalised (Pesaran–Shin)']] },
+      { id: 'boot', type: 'sel', th: 'Bootstrap (ช่วงความเชื่อมั่น)', en: 'Bootstrap replications', def: '200', opts: [['0', 'ไม่คำนวณ', 'None'], ['100', '100 รอบ', '100'], ['200', '200 รอบ', '200'], ['500', '500 รอบ', '500']] },
+      { id: 'cumulative', type: 'chk', th: 'แสดง IRF แบบสะสม (Accumulated)', en: 'Accumulated IRF', def: false }
+    ],
+    run: (D, s) => TS.runIrf(D, s),
+    summary(r) {
+      const nm = r.names, k = nm.length, H = r.H, o = [];
+      o.push(L(`VAR(${r.p}) — IRF แบบ ${r.type === 'orth' ? 'Cholesky' : 'Generalised'}${r.cum ? ' สะสม' : ''}, ${H} ช่วงเวลา${r.band ? `, Bootstrap ${r.band.n} รอบ` : ''}`, `VAR(${r.p}) — ${r.type === 'orth' ? 'Cholesky' : 'generalised'}${r.cum ? ' accumulated' : ''} IRFs, ${H} periods${r.band ? `, ${r.band.n} bootstrap draws` : ''}`));
+      for (let i = 0; i < k; i++) {
+        const fe = r.fevd[H - 1][i]; let j = 0; let best = -1, bj = 0; for (j = 0; j < k; j++) if (j !== i && fe[j] > best) { best = fe[j]; bj = j; }
+        o.push(L(`FEVD ของ ${nm[i]} ที่ h = ${H}: อธิบายด้วย Shock ของตัวเอง ${(fe[i] * 100).toFixed(1)}%, Shock จาก ${nm[bj]} ${(best * 100).toFixed(1)}%`, `FEVD of ${nm[i]} at h = ${H}: own shock ${(fe[i] * 100).toFixed(1)}%, largest other shock ${nm[bj]} ${(best * 100).toFixed(1)}%`));
+      }
+      return o;
+    },
+    tables(r) {
+      const nm = r.names, k = nm.length, T = [], H = r.H;
+      T.push({ title: L('สรุปการตั้งค่า', 'Specification summary'), cols: [C(L('รายการ', 'Item'), 't'), C(L('ค่า', 'Value'), 't')], rows: [
+        [L('ลำดับตัวแปร (Cholesky ordering)', 'Variable (Cholesky) ordering'), nm.join(' → ')], [L('การแปลงข้อมูล', 'Transformation'), transName(r.transform)], [L('Lag ของ VAR', 'VAR lag'), `${r.p} (${r.crit.toUpperCase()})`],
+        [L('ชนิด IRF', 'IRF type'), (r.type === 'orth' ? 'Orthogonalised (Cholesky)' : 'Generalised (Pesaran–Shin)') + (r.cum ? L(' – สะสม', ' – accumulated') : '')], ['Horizon', String(H)],
+        [L('ช่วงความเชื่อมั่น', 'Confidence bands'), r.band ? `95% residual bootstrap (${r.band.n} ${L('รอบ', 'draws')})` : L('ไม่คำนวณ', 'None')],
+        [L('เสถียรภาพ (รากสูงสุด)', 'Stability (max root)'), fnum(r.roots[0].mod) + (r.roots[0].mod < 1 ? ' ✓' : ' ✗')], ['N', String(r.fit.n)]],
+        notes: [L('Cholesky: Shock ของตัวแปรลำดับแรกส่งผลทันทีต่อทุกตัว แต่ตัวแปรลำดับหลังไม่ส่งผลทันทีต่อตัวแปรลำดับก่อน — ลำดับจึงสำคัญ', 'Cholesky: a shock to the first variable affects all others on impact, but later variables do not affect earlier ones contemporaneously — ordering matters.'),
+          L('Generalised IRF ไม่ขึ้นกับลำดับตัวแปร แต่ Shock ไม่ตั้งฉากกัน จึงผลรวม FEVD จาก GIRF ไม่เท่ากับ 100% (FEVD ในตารางนี้ใช้ Cholesky เสมอ)', 'Generalised IRFs are order-invariant but shocks are not orthogonal (FEVD here always uses Cholesky).'),
+          L('ถ้า VAR ไม่มีเสถียรภาพ IRF จะไม่ลู่เข้าศูนย์และไม่ควรตีความ', 'If the VAR is unstable, IRFs do not die out and should not be interpreted.')] });
+      for (let j = 0; j < k; j++) {
+        const cols = [C('h', 'i')]; nm.forEach(v => { cols.push(C(v)); if (r.band) { cols.push(C(v + ' L95')); cols.push(C(v + ' U95')); } });
+        T.push({ title: L(`IRF: การตอบสนองต่อ Shock ของ ${nm[j]}`, `IRF: responses to a shock in ${nm[j]}`), cols,
+          rows: range(H + 1).map(h => [h, ...nm.flatMap((_, i) => (r.band ? [r.irf[h][i][j], r.band.lo[h][i][j], r.band.hi[h][i][j]] : [r.irf[h][i][j]]))]),
+          notes: [L(`ค่าการตอบสนองของแต่ละตัวแปรต่อ Shock ขนาด 1 S.D. ใน ${nm[j]} ณ ช่วงเวลา h (h = 0 คือผลทันที)`, `Response of each variable to a one-S.D. shock in ${nm[j]} at horizon h (h = 0 is the impact effect).`),
+            r.band ? L('หากช่วง L95–U95 ไม่คร่อมศูนย์ แสดงว่าการตอบสนองมีนัยสำคัญที่ 5%', 'If the L95–U95 band excludes zero, the response is significant at 5%.') : L('เลือก Bootstrap เพื่อคำนวณช่วงความเชื่อมั่น', 'Enable the bootstrap to obtain confidence bands.')] });
+      }
+      for (let i = 0; i < k; i++) T.push({ title: L(`Variance Decomposition ของ ${nm[i]} (%)`, `Variance decomposition of ${nm[i]} (%)`), cols: [C('h', 'i'), ...nm.map(v => C(L('Shock ', 'Shock ') + v, 'pct'))],
+        rows: range(H).map(h => [h + 1, ...r.fevd[h][i]]),
+        notes: [L(`สัดส่วน (%) ของความแปรปรวนของความคลาดเคลื่อนในการพยากรณ์ ${nm[i]} ล่วงหน้า h ช่วง ที่อธิบายได้ด้วย Shock ของแต่ละตัวแปร (ผลรวม = 100%)`, `Share (%) of the h-step forecast-error variance of ${nm[i]} explained by each shock (rows sum to 100%).`),
+          L('สัดส่วนจาก Shock ของตัวเองสูง ⇒ ตัวแปรค่อนข้างเป็นอิสระ (exogenous); สัดส่วนจาก Shock อื่นเพิ่มขึ้นตาม h ⇒ มีการส่งผ่านทางอ้อม', 'A high own-shock share ⇒ relatively exogenous; growing shares from other shocks ⇒ indirect transmission.')] });
+      return T;
+    },
+    charts(r) {
+      const nm = r.names, k = nm.length, H = r.H, lab = range(H + 1).map(String), out = [];
+      for (let j = 0; j < k; j++) for (let i = 0; i < k; i++) {
+        const d = [];
+        if (r.band) { d.push(ds('_lo', range(H + 1).map(h => r.band.lo[h][i][j]), 'rgba(0,0,0,0)')); d.push(ds(L('ช่วง 95%', '95% band'), range(H + 1).map(h => r.band.hi[h][i][j]), 'rgba(0,0,0,0)', { fill: '-1', backgroundColor: BAND })); }
+        d.push(ds('IRF', range(H + 1).map(h => r.irf[h][i][j]), PAL[j % 8], { borderWidth: 2.2, pointRadius: 2 }));
+        d.push(hline('_0', H + 1, 0, '#5c667a', []));
+        out.push(lineSpec(`${L('การตอบสนองของ', 'Response of')} ${nm[i]} ${L('ต่อ Shock', 'to')} ${nm[j]}`, lab, d, { xTitle: L('ช่วงเวลาหลัง Shock', 'Periods after shock'), legend: !!r.band, xTicks: 13 }));
+      }
+      for (let i = 0; i < k; i++) out.push(barSpec(L(`Variance decomposition ของ ${nm[i]}`, `Variance decomposition of ${nm[i]}`), range(H).map(h => String(h + 1)), nm.map((v, j) => ds('Shock ' + v, range(H).map(h => r.fevd[h][i][j] * 100), PAL[j % 8], { borderWidth: 0 })), { stacked: true, ymin: 0, ymax: 100, yTitle: '%', xTitle: 'h', mode: 'index' }));
+      return out;
+    }
+  };
+
+  // ===== GARCH =====
+  MODS.garch = {
+    tag: 'ARCH · GARCH · EGARCH · GJR', vars: 'single',
+    name: () => L('แบบจำลอง GARCH (ARCH / GARCH / EGARCH)', 'GARCH Models (ARCH / GARCH / EGARCH)'),
+    short: () => L('พยากรณ์ความผันผวน (Volatility) ของผลตอบแทน โดยเฉพาะในงานด้านการเงิน', 'Model and forecast volatility of returns, especially in finance'),
+    info: () => ({
+      purpose: L('จำลองความแปรปรวนที่เปลี่ยนแปลงตามเวลา (Volatility clustering) ของผลตอบแทนสินทรัพย์ และพยากรณ์ความผันผวน; EGARCH และ GJR จับผลไม่สมมาตร (Leverage effect) ที่ข่าวร้ายเพิ่มความผันผวนมากกว่าข่าวดี', 'Models time-varying variance (volatility clustering) of asset returns and forecasts volatility; EGARCH and GJR capture asymmetric (leverage) effects where bad news raises volatility more than good news.'),
+      eq: 'rₜ = μ + εₜ,  σ²ₜ = ω + Σαᵢε²ₜ₋ᵢ + Σβⱼσ²ₜ₋ⱼ ;  EGARCH: ln σ²ₜ = ω + α(|zₜ₋₁|−E|z|) + γzₜ₋₁ + β ln σ²ₜ₋₁',
+      method: L('Maximum Likelihood (Normal) ด้วย Nelder–Mead, SE จาก Hessian, ทดสอบ ARCH-LM ก่อน/หลังประมาณค่า และเปรียบเทียบ 4 ตัวแบบด้วย AIC/BIC', 'Gaussian maximum likelihood with Nelder–Mead; Hessian SEs; ARCH-LM tests before/after; 4 models compared by AIC/BIC.'),
+      data: L('ราคา/ดัชนี (จะแปลงเป็นผลตอบแทน) หรือผลตอบแทนโดยตรง อย่างน้อย 100 ค่า (แนะนำ ≥ 500 ค่ารายวัน)', 'Prices/index levels (converted to returns) or returns directly; ≥ 100 observations (≥ 500 daily recommended).')
+    }),
+    settings: [
+      { id: 'model', type: 'sel', th: 'แบบจำลองหลัก', en: 'Main model', def: 'garch', opts: [['garch', 'GARCH(p,q)', 'GARCH(p,q)'], ['egarch', 'EGARCH(p,q)', 'EGARCH(p,q)'], ['gjr', 'GJR-GARCH(p,q)', 'GJR-GARCH(p,q)'], ['arch', 'ARCH(q)', 'ARCH(q)']] },
+      { id: 'p', type: 'num', th: 'p (GARCH lag)', en: 'p (GARCH lags)', def: 1, min: 1, max: 2 },
+      { id: 'q', type: 'num', th: 'q (ARCH lag)', en: 'q (ARCH lags)', def: 1, min: 1, max: 2 },
+      { id: 'transform', type: 'sel', th: 'ข้อมูลนำเข้า', en: 'Input data', def: 'logret', opts: [['logret', 'ราคา → ผลตอบแทน log ×100', 'Prices → log returns ×100'], ['pct', 'ราคา → % การเปลี่ยนแปลง', 'Prices → % change'], ['none', 'เป็นผลตอบแทนอยู่แล้ว', 'Already returns']] },
+      { id: 'mean', type: 'sel', th: 'สมการค่าเฉลี่ย', en: 'Mean equation', def: 'const', opts: [['const', 'ค่าคงที่ μ', 'Constant μ'], ['zero', 'ค่าเฉลี่ยศูนย์', 'Zero mean']] },
+      { id: 'h', type: 'num', th: 'พยากรณ์ล่วงหน้า (h)', en: 'Forecast horizon (h)', def: 10, min: 1, max: 60 },
+      { id: 'ann', type: 'num', th: 'ตัวคูณรายปี (วันทำการ)', en: 'Annualisation factor', def: 252, min: 1, max: 366 }
+    ],
+    run: (D, s) => TS.runGarch(D, s),
+    summary(r) {
+      const f = r.fit, nmd = gName(r.sel, f.sp), best = Object.entries(r.fits).filter(x => x[1]).sort((a, b) => a[1].aic - b[1].aic)[0][0];
+      const g = f.coefs.find(c => c.name.startsWith('γ'));
+      return [
+        L(`ARCH-LM(5) ก่อนประมาณค่า p = ${fp(r.pre.lm5.p)} → ${r.pre.lm5.p < 0.05 ? 'มี ARCH effect (เหมาะกับ GARCH)' : 'ไม่พบ ARCH effect ชัดเจน'}`, `Pre-estimation ARCH-LM(5) p = ${fp(r.pre.lm5.p)} → ${r.pre.lm5.p < 0.05 ? 'ARCH effects present (GARCH appropriate)' : 'no clear ARCH effect'}`),
+        L(`${nmd}: Persistence = ${fnum(f.pers, 4)}, Half-life ≈ ${fnum(f.halfLife, 1)} งวด${g ? `, γ = ${fnum(g.coef, 4)} (p = ${fp(g.p)})${g.p < 0.05 ? ' → มี Leverage/Asymmetric effect' : ''}` : ''}`, `${nmd}: persistence = ${fnum(f.pers, 4)}, half-life ≈ ${fnum(f.halfLife, 1)} periods${g ? `, γ = ${fnum(g.coef, 4)} (p = ${fp(g.p)})${g.p < 0.05 ? ' → significant asymmetry/leverage' : ''}` : ''}`),
+        L(`ตัวแบบที่ดีที่สุดตาม AIC: ${gName(best, f.sp)}; ความผันผวนพยากรณ์งวดถัดไป σ = ${fnum(Math.sqrt(r.fc[0]), 4)} (รายปี ≈ ${fnum(Math.sqrt(r.fc[0] * r.ann), 2)})`, `Best model by AIC: ${gName(best, f.sp)}; next-period volatility σ = ${fnum(Math.sqrt(r.fc[0]), 4)} (annualised ≈ ${fnum(Math.sqrt(r.fc[0] * r.ann), 2)})`)
+      ];
+    },
+    tables(r) {
+      const T = [], f = r.fit, d = r.desc, nmd = gName(r.sel, f.sp);
+      T.push({ title: L('สถิติเชิงพรรณนาของผลตอบแทน', 'Descriptive statistics of returns'), cols: [C(L('สถิติ', 'Statistic'), 't'), C(L('ค่า', 'Value')), C(L('คำอธิบาย', 'Meaning'), 't')], rows: [
+        ['N', d.n, ''], [L('ค่าเฉลี่ย', 'Mean'), d.mean, ''], ['S.D.', d.sd, L('ความผันผวนเฉลี่ยต่องวด', 'Average per-period volatility')], ['Min', d.min, ''], ['Max', d.max, ''],
+        ['Skewness', d.skew, L('<0 = หางซ้ายยาว (ขาดทุนรุนแรงบ่อยกว่า)', '<0 = longer left tail')], ['Kurtosis', d.kurt, L('>3 = หางหนา (Fat tails)', '>3 = fat tails')], ['Jarque–Bera', d.JB, ''], ['p (JB)', d.jbp, L('<0.05 = ไม่แจกแจงปกติ', '<0.05 = non-normal')],
+        ['ADF τ', r.adf.stat, ''], ['p (ADF)', r.adf.p, L('<0.05 = ผลตอบแทนนิ่ง', '<0.05 = returns are stationary')]],
+        notes: [r.isPrice ? L(`แปลงราคา ${r.name} เป็นผลตอบแทน${r.raw && r.sel ? '' : ''} (${r.r.length} ค่า)`, `Prices of ${r.name} were converted to returns (${r.r.length} obs).`) : L('ใช้ข้อมูลเป็นผลตอบแทนโดยตรง', 'Data used directly as returns.'),
+          L('ผลตอบแทนทางการเงินมักมี Kurtosis > 3 และไม่แจกแจงปกติ ซึ่งสอดคล้องกับ Volatility clustering', 'Financial returns typically show kurtosis > 3 and non-normality, consistent with volatility clustering.')] });
+      const yn = p => dec(p < 0.05, L('มีผล ARCH', 'ARCH present'), L('ไม่มีผล ARCH', 'No ARCH'));
+      T.push({ title: L('การทดสอบก่อนประมาณค่า (ARCH effect)', 'Pre-estimation tests (ARCH effects)'), cols: [C(L('การทดสอบ', 'Test'), 't'), C(L('ค่าสถิติ', 'Statistic'), 'n3'), C('df', 'i'), C('p-value', 'p'), C(L('ผลสรุป', 'Conclusion'), 't')], rows: [
+        ['ARCH-LM (5)', r.pre.lm5.LM, 5, r.pre.lm5.p, yn(r.pre.lm5.p)], ['ARCH-LM (10)', r.pre.lm10.LM, 10, r.pre.lm10.p, yn(r.pre.lm10.p)],
+        ['Ljung–Box Q(10) r²', r.pre.lbr2.Q, 10, r.pre.lbr2.p, yn(r.pre.lbr2.p)], ['Ljung–Box Q(10) r', r.pre.lbr.Q, 10, r.pre.lbr.p, dec(r.pre.lbr.p >= 0.05, L('ไม่มี autocorrelation', 'No autocorrelation'), L('มี autocorrelation', 'Autocorrelated'))]],
+        notes: [L('ARCH-LM (Engle, 1982): ถดถอย ε²ₜ บน ε²ₜ₋₁…ε²ₜ₋q; LM = T·R² ~ χ²(q); H₀: ไม่มี ARCH effect', 'Engle’s ARCH-LM regresses ε²ₜ on q of its lags; LM = T·R² ~ χ²(q); H₀: no ARCH effect.'), L('ปฏิเสธ H₀ ⇒ ความแปรปรวนมีการเกาะกลุ่ม จึงควรใช้แบบจำลองตระกูล GARCH', 'Rejecting H₀ ⇒ volatility clustering, so a GARCH-type model is warranted.')] });
+      T.push({ title: L(`ค่าสัมประสิทธิ์: ${nmd}`, `Coefficients: ${nmd}`), cols: [C(L('พารามิเตอร์', 'Parameter'), 't'), C('Coef.', 'n6'), C('Std. Error', 'n6'), C('z-stat', 'n3'), C('p-value', 'p'), C('Sig.', 't')],
+        rows: f.coefs.map(c => [c.name, c.coef, c.se, c.z, c.p, star(c.p)]),
+        notes: [L('ω = ค่าคงที่ของสมการความแปรปรวน; α = ผลของ Shock (ข่าว) งวดก่อน (ARCH); β = ความต่อเนื่องของความผันผวน (GARCH)', 'ω = variance intercept; α = effect of last period’s shock/news (ARCH); β = volatility persistence (GARCH).'),
+          f.sp.type === 'gjr' ? L('γ (GJR) > 0 ⇒ ข่าวร้าย (εₜ₋₁ < 0) เพิ่มความผันผวนมากกว่าข่าวดี (Leverage effect)', 'γ (GJR) > 0 ⇒ bad news (εₜ₋₁ < 0) raises volatility more than good news (leverage effect).') : f.sp.type === 'egarch' ? L('EGARCH: γ < 0 ⇒ Leverage effect; ไม่ต้องบังคับให้พารามิเตอร์เป็นบวกเพราะใช้ ln σ²; β ใกล้ 1 = ความผันผวนคงอยู่นาน', 'EGARCH: γ < 0 ⇒ leverage effect; no positivity constraints since it models ln σ²; β near 1 = high persistence.') : L('เงื่อนไข: ω > 0, α, β ≥ 0 และ α + β < 1 เพื่อให้ความแปรปรวนไม่มีเงื่อนไข (unconditional) มีค่าจำกัด', 'Constraints: ω > 0, α, β ≥ 0 and α + β < 1 for a finite unconditional variance.'),
+          L('SE คำนวณจากเมทริกซ์ Hessian ภายใต้ Normal likelihood', 'Standard errors from the Hessian under the Gaussian likelihood.')] });
+      T.push({ title: L('สถิติความเหมาะสมและความผันผวน', 'Fit statistics & volatility'), cols: [C(L('สถิติ', 'Statistic'), 't'), C(L('ค่า', 'Value')), C(L('คำอธิบาย', 'Meaning'), 't')], rows: [
+        ['Log-likelihood', f.ll, ''], ['AIC', f.aic, L('ยิ่งต่ำยิ่งดี', 'lower is better')], ['BIC', f.bic, L('ยิ่งต่ำยิ่งดี', 'lower is better')],
+        ['Persistence', f.pers, f.sp.type === 'egarch' ? 'Σβ' : f.sp.type === 'gjr' ? 'Σα + ½Σγ + Σβ' : 'Σα + Σβ'], ['Half-life', f.halfLife, L('จำนวนงวดที่ Shock ต่อความผันผวนลดลงครึ่งหนึ่ง', 'periods for a volatility shock to halve')],
+        [L('ความแปรปรวนไม่มีเงื่อนไข', 'Unconditional variance'), f.uncond, ''], [L('ความผันผวนระยะยาว (σ)', 'Long-run volatility (σ)'), Math.sqrt(f.uncond), ''], [L('ความผันผวนรายปี', 'Annualised volatility'), Math.sqrt(f.uncond * r.ann), `σ × √${r.ann}`]],
+        notes: [L('Persistence ใกล้ 1 แสดงว่า Shock ต่อความผันผวนคงอยู่นาน (IGARCH หาก = 1)', 'Persistence close to 1 means volatility shocks are long-lived (IGARCH if = 1).')] });
+      const ok = p => dec(p >= 0.05, L('ผ่าน ✓', 'Pass ✓'), L('ไม่ผ่าน', 'Fail'));
+      T.push({ title: L('การตรวจสอบส่วนเหลือมาตรฐาน (zₜ = εₜ/σₜ)', 'Standardised-residual diagnostics (zₜ = εₜ/σₜ)'), cols: [C(L('การทดสอบ', 'Test'), 't'), C(L('ค่าสถิติ', 'Statistic'), 'n3'), C('p-value', 'p'), C(L('ผล', 'Result'), 't')], rows: [
+        ['Ljung–Box Q(10) z', r.post.lbz.Q, r.post.lbz.p, ok(r.post.lbz.p)], ['Ljung–Box Q(10) z²', r.post.lbz2.Q, r.post.lbz2.p, ok(r.post.lbz2.p)], ['ARCH-LM(5) z', r.post.lm.LM, r.post.lm.p, ok(r.post.lm.p)], ['Jarque–Bera z', r.post.jb.JB, r.post.jb.p, ok(r.post.jb.p)]],
+        notes: [L('หลังประมาณค่า z² ไม่ควรมีสหสัมพันธ์และไม่ควรเหลือ ARCH effect (p > 0.05) แสดงว่าตัวแบบจับความผันผวนได้ครบ', 'After estimation, z² should show no autocorrelation or remaining ARCH (p > 0.05), meaning volatility dynamics are captured.'), L('JB มักยังปฏิเสธเพราะหางหนา — อาจพิจารณาการแจกแจง Student-t ในซอฟต์แวร์เฉพาะทาง', 'JB often still rejects because of fat tails — a Student-t likelihood may be considered in specialised software.')] });
+      const rows = Object.entries(r.fits).map(([ty, ft]) => ft ? [gName(ty, ft.sp), ft.ll, ft.aic, ft.bic, ft.pers, ft.k] : [gName(ty, f.sp), null, null, null, null, null]);
+      const bestA = Math.min(...rows.filter(x => x[2] != null).map(x => x[2]));
+      T.push({ title: L('เปรียบเทียบแบบจำลองตระกูล GARCH', 'GARCH-family model comparison'), cols: [C(L('แบบจำลอง', 'Model'), 't'), C('Log-lik', 'n3'), C('AIC', 'n3'), C('BIC', 'n3'), C('Persistence'), C(L('พารามิเตอร์', 'Params'), 'i')],
+        rows: rows.map(x => [{ v: x[0] + (x[2] === bestA ? ' ★' : ''), cls: x[2] === bestA ? 'ok' : '' }, ...x.slice(1)]),
+        notes: [L('★ = AIC ต่ำที่สุด; ถ้า EGARCH/GJR ดีกว่า GARCH แสดงว่ามีผลไม่สมมาตร (Asymmetric effect)', '★ = lowest AIC; if EGARCH/GJR beat GARCH, there is an asymmetric effect.')] });
+      const fl = nextLabels(r.labels, r.H);
+      T.push({ title: L('การพยากรณ์ความผันผวน', 'Volatility forecast'), cols: [C(L('งวด', 'Period'), 't'), C('h', 'i'), C('σ²'), C('σ'), C(L('σ รายปี', 'Annualised σ'), 'n3')], rows: r.fc.map((v, i) => [fl[i], i + 1, v, Math.sqrt(v), Math.sqrt(v * r.ann)]),
+        notes: [L('ความผันผวนที่พยากรณ์จะลู่เข้าหาค่าระยะยาว (unconditional) ด้วยอัตรา Persistence', 'Forecast volatility converges to its long-run (unconditional) level at the rate of persistence.'), L('หน่วยเดียวกับผลตอบแทน (เช่น % ต่อวัน หากใช้ log return ×100)', 'Same units as returns (e.g. % per day for log returns ×100).')] });
+      return T;
+    },
+    charts(r) {
+      const out = [], f = r.fit, lb = r.labels, sig = f.h.map(Math.sqrt), n = r.r.length;
+      if (r.isPrice) out.push(lineSpec(L(`ราคา / ดัชนี: ${r.name}`, `Price / index: ${r.name}`), r.labelsAll, [ds(r.name, r.raw, '#142033')], { legend: false, wide: true, xTicks: 10 }));
+      out.push(lineSpec(L('ผลตอบแทน', 'Returns'), lb, [ds(L('ผลตอบแทน', 'Return'), r.r, PAL[0], { borderWidth: 1 })], { legend: false }));
+      out.push(lineSpec(L(`ความผันผวนแบบมีเงื่อนไข σₜ (${gName(r.sel, f.sp)})`, `Conditional volatility σₜ (${gName(r.sel, f.sp)})`), lb, [ds('σₜ', sig, PAL[1], { borderWidth: 1.4, fill: { target: 'origin', above: 'rgba(217,98,43,.12)' } })], { legend: false }));
+      out.push(lineSpec(L('ผลตอบแทนกับขอบเขต ±2σₜ', 'Returns with ±2σₜ bands'), lb, [ds(L('ผลตอบแทน', 'Return'), r.r, PAL[0] + 'aa', { borderWidth: 0.9 }), ds('+2σ', sig.map(s => f.P.mu + 2 * s), '#c03535', { borderWidth: 1.2 }), ds('−2σ', sig.map(s => f.P.mu - 2 * s), '#c03535', { borderWidth: 1.2 })], { wide: true, xTicks: 10 }));
+      out.push(lineSpec(L('ส่วนเหลือมาตรฐาน zₜ', 'Standardised residuals zₜ'), lb, [ds('z', f.z, PAL[3], { borderWidth: 0.9 }), hline('_+2', n, 2, '#c03535'), hline('_-2', n, -2, '#c03535')], { legend: false }));
+      out.push(acfSpec(L('ACF ของผลตอบแทนกำลังสอง (r²)', 'ACF of squared returns (r²)'), r.acfR2, n, PAL[1]));
+      out.push(acfSpec(L('ACF ของผลตอบแทน', 'ACF of returns'), r.acfR, n, PAL[0]));
+      out.push(histSpec(L('การแจกแจงของผลตอบแทน เทียบ Normal', 'Return distribution vs Normal'), r.r, PAL[0]));
+      out.push({ title: 'News impact curve', cfg: { type: 'scatter', data: { datasets: [ds('σ²ₜ = f(εₜ₋₁)', r.nic, PAL[4], { showLine: true, pointRadius: 0, borderWidth: 2.4 })] }, options: baseOpts('News impact curve', { xType: 'linear', xTitle: 'εₜ₋₁ (' + L('ข่าว/Shock', 'news/shock') + ')', yTitle: 'σ²ₜ', legend: false, mode: 'nearest', sub: L('ความไม่สมมาตร = ข่าวร้ายและข่าวดีส่งผลต่างกัน', 'Asymmetry = bad and good news have different effects') }) } });
+      const tail = Math.min(120, n), fl = nextLabels(lb, r.H), lab2 = [...lb.slice(n - tail), ...fl];
+      out.push(lineSpec(L('การพยากรณ์ความผันผวน σ', 'Volatility forecast σ'), lab2, [ds(L('σ ในตัวอย่าง', 'In-sample σ'), [...sig.slice(n - tail), ...new Array(r.H).fill(null)], PAL[1]), ds(L('σ พยากรณ์', 'Forecast σ'), [...new Array(tail - 1).fill(null), sig[n - 1], ...r.fc.map(Math.sqrt)], PAL[0], { borderWidth: 2.4, pointRadius: [...new Array(tail).fill(0), ...new Array(r.H).fill(2.5)] }), hline(L('σ ระยะยาว', 'Long-run σ'), lab2.length, Math.sqrt(f.uncond), '#5c667a')], { wide: true }));
+      return out;
+    }
+  };
+  function gName(ty, sp) { const p = sp.p, q = sp.q; return ty === 'arch' ? `ARCH(${q})` : ty === 'garch' ? `GARCH(${p},${q})` : ty === 'gjr' ? `GJR-GARCH(${p},${q})` : `EGARCH(${p},${q})`; }
+
+  // ---------------- static texts ----------------
+  function applyStatic() {
+    document.documentElement.lang = LANG;
+    $$('[data-th]').forEach(el => { el.textContent = el.getAttribute('data-' + LANG); });
+    $('#btnTH').classList.toggle('on', LANG === 'th'); $('#btnEN').classList.toggle('on', LANG === 'en');
+    $('#btnSampleTxt').textContent = L('ทดลองใช้ข้อมูลตัวอย่าง', 'Try sample data') + (state.module ? ` (${MODS[state.module].tag.split(' · ')[0]})` : '');
+    $('#btnDlSampleTxt').textContent = L('ดาวน์โหลดไฟล์ตัวอย่าง (Excel)', 'Download sample file (Excel)');
+    $('#loaderTxt').textContent = L('กำลังประมวลผล…', 'Computing…');
+    $('#fmtBox').innerHTML = L('<b>รูปแบบไฟล์:</b> แถวแรกเป็นชื่อตัวแปร · คอลัมน์แรกเป็นวันที่/ช่วงเวลา (ถ้ามี เช่น <code>2020-01</code>, <code>2020Q1</code>, <code>2020-01-31</code>) · คอลัมน์ถัดไปเป็นตัวเลข เรียงจากอดีตไปปัจจุบัน · ใช้ชีตแรกของไฟล์',
+      '<b>File format:</b> first row = variable names · first column = date/period (optional, e.g. <code>2020-01</code>, <code>2020Q1</code>, <code>2020-01-31</code>) · remaining columns numeric, oldest to newest · the first sheet is used');
+  }
+
+  function renderModules() {
+    $('#modGrid').innerHTML = order.map(id => { const m = MODS[id]; return `<button type="button" class="mod${state.module === id ? ' on' : ''}" data-mod="${id}"><span class="tag">${esc(m.tag)}</span><b>${esc(m.name())}</b><span class="d">${esc(m.short())}</span></button>`; }).join('');
+    $$('#modGrid .mod').forEach(b => b.addEventListener('click', () => selectModule(b.dataset.mod)));
+    const box = $('#modInfo');
+    if (!state.module) { box.classList.add('hidden'); return; }
+    const m = MODS[state.module], i = m.info();
+    box.classList.remove('hidden');
+    box.innerHTML = `<h3>${esc(m.name())}</h3><div class="grid">
+      <div><b>${L('วัตถุประสงค์', 'Purpose')}</b>${esc(i.purpose)}</div>
+      <div><b>${L('แบบจำลอง / สมการ', 'Model / equation')}</b><span class="eq">${esc(i.eq)}</span></div>
+      <div><b>${L('วิธีการ', 'Method')}</b>${esc(i.method)}</div>
+      <div><b>${L('ข้อมูลที่ต้องการ', 'Data requirements')}</b>${esc(i.data)}</div></div>`;
+  }
+
+  function selectModule(id) {
+    if (state.module !== id) { state.module = id; clearResults(); }
+    renderModules(); applyStatic();
+    $('#step2').classList.remove('locked'); $('#step2hint').classList.add('hidden');
+    if (state.data) { initSel(); $('#step3').classList.remove('locked'); }
+    renderVars(); renderSettings(); renderDataInfo();
+  }
+
+  // ---------------- data handling ----------------
+  function parseAoa(aoa) {
+    const rows = aoa.filter(r => r && r.some(c => c !== null && c !== undefined && String(c).trim() !== ''));
+    if (rows.length < 3) throw new Error(L('ไฟล์มีข้อมูลน้อยเกินไป', 'The file has too few rows'));
+    const width = Math.max(...rows.map(r => r.length));
+    const header = range(width).map(i => { const h = rows[0][i]; return h == null || String(h).trim() === '' ? 'V' + (i + 1) : String(h).trim(); });
+    const body = rows.slice(1);
+    const toNum = v => { if (typeof v === 'number') return isFinite(v) ? v : NaN; if (v == null) return NaN; const s = String(v).trim().replace(/,/g, ''); if (s === '') return NaN; const n = Number(s); return isFinite(n) ? n : NaN; };
+    const c0 = body.map(r => r[0]);
+    const dateHdr = /date|time|period|year|month|quarter|day|week|วัน|เดือน|ปี|ไตรมาส|ช่วง|เวลา|สัปดาห์/i.test(header[0]);
+    const nonNum0 = c0.filter(v => v != null && v !== '' && isNaN(toNum(v))).length;
+    const labelCol = dateHdr || nonNum0 > 0.5 * c0.length ? 0 : -1;
+    const cols = {}, names = [];
+    for (let j = 0; j < width; j++) {
+      if (j === labelCol) continue;
+      const x = body.map(r => toNum(r[j])); const ok = x.filter(v => !isNaN(v)).length;
+      if (ok >= Math.max(10, 0.8 * body.length)) { let nm = header[j], k = 2; while (cols[nm]) nm = header[j] + '_' + k++; cols[nm] = x; names.push(nm); }
+    }
+    if (!names.length) throw new Error(L('ไม่พบคอลัมน์ตัวเลขที่ใช้ได้ (ต้องมีตัวเลขอย่างน้อย 10 แถว)', 'No usable numeric columns found (need ≥ 10 numeric rows)'));
+    const fmtLabel = v => {
+      if (v == null || v === '') return '';
+      if (typeof v === 'number' && dateHdr && v > 20000 && v < 80000 && window.XLSX) { const d = XLSX.SSF.parse_date_code(v); if (d) return `${d.y}-${String(d.m).padStart(2, '0')}-${String(d.d).padStart(2, '0')}`; }
+      return String(v).trim();
+    };
+    const labels = labelCol === 0 ? c0.map(fmtLabel) : body.map((_, i) => String(i + 1));
+    return { labels, cols, names, labelName: labelCol === 0 ? header[0] : null };
+  }
+  function setData(D, source, isSample) {
+    state.data = D; state.source = source; state.isSample = !!isSample; clearResults();
+    if (state.module === 'arima' && !isSample) { const fr = guessFreq(D.labels); const s = state.settings.arima = state.settings.arima || {}; s.s = fr; s.D = fr > 1 ? 1 : 0; if (fr === 1) { s.P = 0; s.Q = 0; } }
+    if (isSample) state.settings[state.module] = {};
+    initSel(); $('#step3').classList.remove('locked');
+    renderDataInfo(); renderVars(); renderSettings(); showErr('');
+  }
+  function initSel() {
+    const m = MODS[state.module], D = state.data; if (!m || !D) return;
+    if (m.vars === 'single') { if (!D.names.includes(state.sel[state.module])) state.sel[state.module] = D.names[0]; }
+    else { const cur = (state.sel[state.module] || []).filter(n => D.names.includes(n)); state.sel[state.module] = cur.length >= (m.minVars || 1) ? cur : D.names.slice(0, m.maxVars); }
+  }
+  function renderDataInfo() {
+    const D = state.data, box = $('#dataInfo'); if (!D) { box.innerHTML = ''; return; }
+    const n = D.labels.length, show = Math.min(n, 8);
+    const head = `<tr><th>${esc(D.labelName || '#')}</th>${D.names.map(v => `<th class="num">${esc(v)}</th>`).join('')}</tr>`;
+    const rowsIdx = n > 9 ? [...range(show), -1, n - 1] : range(n);
+    const body = rowsIdx.map(i => i < 0 ? `<tr><td>⋮</td>${D.names.map(() => '<td class="num">⋮</td>').join('')}</tr>` : `<tr><td>${esc(D.labels[i])}</td>${D.names.map(v => `<td class="num">${fnum(D.cols[v][i], 4)}</td>`).join('')}</tr>`).join('');
+    box.innerHTML = `<div class="loaded"><span class="pill">✓ ${esc(state.isSample ? L('ข้อมูลตัวอย่าง', 'Sample data') : state.source)}</span><span class="pill gray">${L('จำนวนข้อมูล', 'Observations')}: ${n}</span><span class="pill gray">${L('ตัวแปร', 'Variables')}: ${D.names.length}</span><span class="pill gray">${esc(D.labels[0])} – ${esc(D.labels[n - 1])}</span></div><div class="preview"><table class="t">${head}${body}</table></div>`;
+  }
+  function renderVars() {
+    const m = MODS[state.module], D = state.data, box = $('#varBox'); if (!m || !D) { box.innerHTML = ''; return; }
+    if (m.vars === 'single') {
+      box.innerHTML = `<div class="sub-h">${L('เลือกตัวแปรที่ใช้วิเคราะห์', 'Variable to analyse')}</div><div class="vars">${D.names.map(v => `<label class="chk${state.sel[state.module] === v ? ' on' : ''}"><input type="radio" name="v1" value="${esc(v)}"${state.sel[state.module] === v ? ' checked' : ''}>${esc(v)}</label>`).join('')}</div>`;
+      $$('input[name=v1]', box).forEach(i => i.addEventListener('change', () => { state.sel[state.module] = i.value; renderVars(); }));
+    } else {
+      const sel = state.sel[state.module] || [];
+      const note = state.module === 'coint' ? L('ตัวแปรแรกที่เลือก = ตัวแปรตามในสมการ Engle–Granger / ECM (เลือก 2–4 ตัว)', 'The first selected variable is the dependent variable in Engle–Granger / ECM (select 2–4).')
+        : state.module === 'irf' || state.module === 'var' ? L(`ลำดับตามที่เลือก (ตัวเลขกำกับ) = ลำดับ Cholesky; เลือก ${m.minVars}–${m.maxVars} ตัว — คลิกเพื่อยกเลิกแล้วเลือกใหม่เพื่อเปลี่ยนลำดับ`, `Selection order (numbered) = Cholesky ordering; choose ${m.minVars}–${m.maxVars} — untick and re-tick to reorder.`)
+        : L(`เลือกได้ ${m.minVars}–${m.maxVars} ตัวแปร`, `Select ${m.minVars}–${m.maxVars} variables.`);
+      box.innerHTML = `<div class="sub-h">${L('เลือกตัวแปร', 'Select variables')}</div><div class="vars">${D.names.map(v => { const ix = sel.indexOf(v); return `<label class="chk${ix >= 0 ? ' on' : ''}"><input type="checkbox" value="${esc(v)}"${ix >= 0 ? ' checked' : ''}>${ix >= 0 ? `<b style="color:var(--acc)">${ix + 1}.</b>` : ''}${esc(v)}</label>`; }).join('')}</div><p class="note">${esc(note)}</p>`;
+      $$('input[type=checkbox]', box).forEach(i => i.addEventListener('change', () => {
+        let s = state.sel[state.module] || [];
+        if (i.checked) { if (s.length >= m.maxVars) { i.checked = false; showErr(L(`เลือกได้สูงสุด ${m.maxVars} ตัวแปร`, `At most ${m.maxVars} variables`)); return; } s = [...s, i.value]; } else s = s.filter(x => x !== i.value);
+        state.sel[state.module] = s; showErr(''); renderVars();
+      }));
+    }
+  }
+  function getSettings(id) { const m = MODS[id], cur = state.settings[id] || {}, o = {}; m.settings.forEach(f => { o[f.id] = cur[f.id] !== undefined ? cur[f.id] : f.def; }); return o; }
+  function renderSettings() {
+    const m = MODS[state.module], box = $('#setBox'); if (!m) { box.innerHTML = ''; return; }
+    const s = getSettings(state.module);
+    box.innerHTML = `<div class="sub-h" style="margin-top:16px">${L('ตั้งค่าการวิเคราะห์', 'Analysis settings')}</div><div class="set-grid">${m.settings.map(f => {
+      const lab = esc(L(f.th, f.en));
+      if (f.type === 'num') return `<div class="fld"><label for="s_${f.id}">${lab}</label><input type="number" id="s_${f.id}" data-k="${f.id}" min="${f.min}" max="${f.max}" step="1" value="${esc(s[f.id])}"></div>`;
+      if (f.type === 'sel') return `<div class="fld"><label for="s_${f.id}">${lab}</label><select id="s_${f.id}" data-k="${f.id}">${f.opts.map(o => `<option value="${esc(o[0])}"${String(s[f.id]) === String(o[0]) ? ' selected' : ''}>${esc(L(o[1], o[2]))}</option>`).join('')}</select></div>`;
+      return `<div class="fld cb"><label class="chk${s[f.id] ? ' on' : ''}" style="width:100%"><input type="checkbox" data-k="${f.id}"${s[f.id] ? ' checked' : ''}>${lab}</label></div>`;
+    }).join('')}</div>`;
+    $$('[data-k]', box).forEach(el => el.addEventListener('change', () => {
+      const st = state.settings[state.module] = state.settings[state.module] || {};
+      if (el.type === 'checkbox') { st[el.dataset.k] = el.checked; el.parentElement.classList.toggle('on', el.checked); }
+      else if (el.type === 'number') { const f = m.settings.find(x => x.id === el.dataset.k); let v = Math.round(+el.value); if (isNaN(v)) v = f.def; v = Math.max(f.min, Math.min(f.max, v)); el.value = v; st[el.dataset.k] = v; }
+      else st[el.dataset.k] = el.value;
+    }));
+  }
+
+  // ---------------- run ----------------
+  function errMsg(e) {
+    const m = String(e && e.message || e);
+    if (m.startsWith('LOG_NONPOS')) return L(`ตัวแปร ${m.split(':')[1]} มีค่า ≤ 0 จึงแปลงเป็น log ไม่ได้ — กรุณาเปลี่ยนการแปลงข้อมูล`, `Variable ${m.split(':')[1]} has values ≤ 0, so logs cannot be taken — change the transformation.`);
+    const map = {
+      TOO_SHORT: L('จำนวนข้อมูลไม่เพียงพอสำหรับตัวแบบนี้ — ลดจำนวน Lag/อันดับตัวแบบ หรือเพิ่มข้อมูล', 'Not enough observations for this specification — reduce lags/orders or add data.'),
+      NEED2: L('ต้องเลือกอย่างน้อย 2 ตัวแปร', 'Select at least 2 variables.'),
+      SINGULAR: L('เมทริกซ์เอกฐาน (Singular) — อาจมีตัวแปรซ้ำซ้อน/เป็นค่าคงที่ หรือ Lag มากเกินไป', 'Singular matrix — variables may be collinear/constant, or there are too many lags.'),
+      NOT_PD: L('เมทริกซ์ความแปรปรวนไม่เป็นบวกแน่นอน — ตรวจสอบตัวแปรที่ซ้ำซ้อน', 'Covariance matrix not positive definite — check for redundant variables.'),
+      GARCH_SHORT: L('GARCH ต้องการข้อมูลอย่างน้อย 100 ค่า', 'GARCH needs at least 100 observations.'),
+      GARCH_FAIL: L('การประมาณค่า GARCH ไม่ลู่เข้า — ลองเปลี่ยนแบบจำลองหรือการแปลงข้อมูล', 'GARCH estimation failed to converge — try another model or transformation.'),
+      JOH_MAX6: L('Johansen รองรับไม่เกิน 6 ตัวแปร', 'Johansen supports up to 6 variables.'),
+      EIG_NO_CONV: L('การคำนวณค่าไอเกนไม่ลู่เข้า', 'Eigenvalue computation did not converge.')
+    };
+    return map[m] || L('เกิดข้อผิดพลาด: ', 'Error: ') + m;
+  }
+  function showErr(msg) { $('#errBox').innerHTML = msg ? `<div class="err">${esc(msg)}</div>` : ''; }
+  function runAnalysis() {
+    const id = state.module, m = MODS[id], D = state.data;
+    if (!m) return showErr(L('กรุณาเลือกประเภทการวิเคราะห์', 'Please choose an analysis.'));
+    if (!D) return showErr(L('กรุณาแนบไฟล์หรือใช้ข้อมูลตัวอย่าง', 'Please attach a file or load sample data.'));
+    const names = m.vars === 'single' ? [state.sel[id]] : (state.sel[id] || []);
+    if (!names.length || !names[0]) return showErr(L('กรุณาเลือกตัวแปร', 'Please select variable(s).'));
+    if (m.vars === 'multi' && names.length < m.minVars) return showErr(L(`ต้องเลือกอย่างน้อย ${m.minVars} ตัวแปร`, `Select at least ${m.minVars} variables.`));
+    const keep = range(D.labels.length).filter(t => names.every(n => !isNaN(D.cols[n][t])));
+    const dropped = D.labels.length - keep.length;
+    const sub = { labels: keep.map(t => D.labels[t]), cols: Object.fromEntries(names.map(n => [n, keep.map(t => D.cols[n][t])])), names };
+    const s = getSettings(id); if (m.vars === 'single') s.var = names[0];
+    showErr(''); $('#loader').classList.remove('hidden');
+    setTimeout(() => {
+      try {
+        const res = m.run(sub, s);
+        if (id === 'arima') res.flabels = nextLabels(res.labels, res.H);
+        state.result = { id, res, dropped, names }; state.view = 'table';
+        renderResults(); $('#step4').classList.remove('hidden');
+        setTimeout(() => $('#step4').scrollIntoView({ behavior: 'smooth', block: 'start' }), 30);
+      } catch (e) { console.error(e); showErr(errMsg(e)); }
+      finally { $('#loader').classList.add('hidden'); }
+    }, 40);
+  }
+
+  // ---------------- results rendering ----------------
+  function destroyCharts() { state.charts.forEach(c => { try { c.destroy(); } catch (e) { /* ignore */ } }); state.charts = []; }
+  function clearResults() { destroyCharts(); state.result = null; state.tables = []; $('#step4').classList.add('hidden'); $('#resTables').innerHTML = ''; $('#resCharts').innerHTML = ''; $('#keyBox').innerHTML = ''; }
+  function renderResults() {
+    const R = state.result; if (!R) return;
+    const m = MODS[R.id];
+    $('#resHint').textContent = m.name();
+    const key = m.summary(R.res);
+    $('#keyBox').innerHTML = (R.dropped ? `<div class="warnbox">${L(`ตัดแถวที่มีค่าว่าง/ไม่ใช่ตัวเลขออก ${R.dropped} แถว`, `${R.dropped} row(s) with missing/non-numeric values were removed`)}</div>` : '') + `<div class="keybox"><b>${L('สรุปผลที่สำคัญ', 'Key findings')}</b><ul>${key.map(k => `<li>${esc(k)}</li>`).join('')}</ul></div>`;
+    state.tables = m.tables(R.res);
+    $('#resTables').innerHTML = state.tables.map((T, ix) => renderTable(T, ix)).join('');
+    setView(state.view);
+  }
+  function renderTable(T, ix) {
+    const head = T.cols.map(c => `<th class="${c.f === 't' ? '' : 'num'}">${esc(c.h)}</th>`).join('');
+    const body = T.rows.map(r => '<tr>' + r.map((cell, j) => { const c = T.cols[j] || { f: 'n' }; let v = cell, cls = ''; if (cell && typeof cell === 'object') { v = cell.v; cls = cell.cls || ''; } const isTxt = c.f === 't' || typeof v === 'string'; return `<td class="${isTxt ? '' : 'num'} ${cls}">${esc(fmtCell(v, c.f))}</td>`; }).join('') + '</tr>').join('');
+    const notes = T.notes && T.notes.length ? `<div class="explain"><b>${L('คำอธิบายค่าสถิติ', 'How to read this table')}</b><ul>${T.notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul></div>` : '';
+    return `<div class="tcard"><h4><span class="ix">${L('ตารางที่', 'Table')} ${ix + 1}</span>${esc(T.title)}</h4><div class="tscroll"><table class="t"><thead>${head}</thead><tbody>${body}</tbody></table></div>${notes}</div>`;
+  }
+  function setView(v) {
+    state.view = v;
+    $('#vTable').classList.toggle('on', v === 'table'); $('#vChart').classList.toggle('on', v === 'chart');
+    $('#resTables').classList.toggle('hidden', v !== 'table'); $('#resCharts').classList.toggle('hidden', v !== 'chart');
+    if (v === 'chart') renderCharts();
+  }
+  function renderCharts() {
+    destroyCharts(); const R = state.result; if (!R) return;
+    const specs = MODS[R.id].charts(R.res), box = $('#resCharts');
+    box.innerHTML = specs.map((s, i) => `<div class="ccard${s.wide ? ' wide' : ''}${s.sq ? ' sq' : ''}"><div class="cbar"><button class="btn sm" type="button" data-png="${i}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>${L('ดาวน์โหลด PNG', 'Download PNG')}</button></div><div class="cbox"><canvas id="cv${i}"></canvas></div></div>`).join('');
+    specs.forEach((s, i) => { try { state.charts[i] = new Chart($('#cv' + i), s.cfg); } catch (e) { console.error(e); } });
+    $$('[data-png]', box).forEach(b => b.addEventListener('click', () => { const i = +b.dataset.png, ch = state.charts[i]; if (!ch) return; const a = document.createElement('a'); a.href = ch.toBase64Image('image/png', 1); a.download = `${R.id}_${String(i + 1).padStart(2, '0')}_${slug(specs[i].title)}.png`; document.body.appendChild(a); a.click(); a.remove(); }));
+  }
+  const slug = s => String(s).normalize('NFKD').replace(/[^\w฀-๿]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 60) || 'chart';
+
+  // ---------------- Excel ----------------
+  function sheetName(s, used) { let n = String(s).replace(/[\[\]\*\?\/\\:]/g, ' ').slice(0, 31).trim() || 'Sheet'; let k = 2, b = n; while (used.has(n)) n = (b.slice(0, 27) + ' (' + k++ + ')'); used.add(n); return n; }
+  function cellOut(cell, f) { let v = cell && typeof cell === 'object' ? cell.v : cell; if (v == null) return ''; if (typeof v === 'number') { if (!isFinite(v)) return ''; return f === 'pct' ? +(v * 100).toFixed(4) : v; } return v; }
+  function downloadTables() {
+    if (!window.XLSX) return showErr(L('ไม่สามารถโหลดไลบรารี Excel ได้ (ต้องเชื่อมต่ออินเทอร์เน็ต)', 'Excel library not loaded (internet required).'));
+    const R = state.result; if (!R) return;
+    const wb = XLSX.utils.book_new(), used = new Set(), m = MODS[R.id];
+    const info = [[L('การวิเคราะห์', 'Analysis'), m.name()], [L('ตัวแปร', 'Variables'), R.names.join(', ')], [L('ข้อมูล', 'Data'), state.isSample ? L('ข้อมูลตัวอย่าง', 'Sample data') : state.source], [L('วันที่สร้าง', 'Generated'), new Date().toLocaleString()], [], [L('สรุปผลที่สำคัญ', 'Key findings')], ...m.summary(R.res).map(s => ['• ' + s]), [], [L('การตั้งค่า', 'Settings')], ...Object.entries(getSettings(R.id)).map(([k, v]) => [k, String(v)])];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(info), sheetName(L('สรุป', 'Summary'), used));
+    state.tables.forEach((T, i) => {
+      const aoa = [[T.title], [], T.cols.map(c => c.h), ...T.rows.map(r => r.map((c, j) => cellOut(c, (T.cols[j] || {}).f)))];
+      if (T.notes && T.notes.length) { aoa.push([]); aoa.push([L('คำอธิบาย', 'Notes')]); T.notes.forEach(n => aoa.push(['• ' + n])); }
+      const ws = XLSX.utils.aoa_to_sheet(aoa); ws['!cols'] = T.cols.map((c, j) => ({ wch: Math.max(10, Math.min(48, Math.max(String(c.h).length, ...T.rows.map(r => String(fmtCell(r[j] && typeof r[j] === 'object' ? r[j].v : r[j], c.f)).length)) + 2)) }));
+      XLSX.utils.book_append_sheet(wb, ws, sheetName((i + 1) + ' ' + T.title, used));
+    });
+    XLSX.writeFile(wb, `TSE_${R.id}_results.xlsx`);
+  }
+  function downloadSample() {
+    if (!state.module) return;
+    if (!window.XLSX) return showErr(L('ไม่สามารถโหลดไลบรารี Excel ได้ (ต้องเชื่อมต่ออินเทอร์เน็ต)', 'Excel library not loaded (internet required).'));
+    const S = TS.samples[state.module](), nm = Object.keys(S.cols);
+    const aoa = [[S.labelName, ...nm], ...S.labels.map((l, i) => [l, ...nm.map(v => S.cols[v][i])])];
+    const wb = XLSX.utils.book_new(), ws = XLSX.utils.aoa_to_sheet(aoa); ws['!cols'] = [{ wch: 12 }, ...nm.map(() => ({ wch: 11 }))];
+    XLSX.utils.book_append_sheet(wb, ws, 'Data');
+    const readme = [[MODS[state.module].name()], [], [L('คำอธิบายตัวแปร (ข้อมูลจำลอง)', 'Variable description (simulated data)')], ...sampleDesc(state.module).map(x => [x[0], x[1]]), [], [L('รูปแบบไฟล์: แถวแรก = ชื่อตัวแปร, คอลัมน์แรก = ช่วงเวลา, คอลัมน์ถัดไป = ตัวเลข (ชีต Data ต้องเป็นชีตแรก)', 'Format: row 1 = names, column A = period, other columns numeric (the Data sheet must be first)')]];
+    const w2 = XLSX.utils.aoa_to_sheet(readme); w2['!cols'] = [{ wch: 14 }, { wch: 80 }];
+    XLSX.utils.book_append_sheet(wb, w2, 'README');
+    XLSX.writeFile(wb, `sample_${state.module}.xlsx`);
+  }
+  function sampleDesc(id) {
+    return {
+      arima: [['SALES', L('ยอดขายรายเดือน (มีแนวโน้มและฤดูกาล 12 เดือน)', 'Monthly sales with trend and 12-month seasonality')]],
+      unitroot: [['LGDP', L('ln GDP รายไตรมาส (Random walk with drift → I(1))', 'Quarterly ln GDP (random walk with drift → I(1))')], ['INF', L('อัตราเงินเฟ้อ (AR(1) นิ่ง → I(0))', 'Inflation (stationary AR(1) → I(0))')], ['LEXPORT', L('ln การส่งออก (Trend-stationary)', 'ln exports (trend-stationary)')]],
+      coint: [['LCONS', L('ln การบริโภค (Cointegrated กับ LINC)', 'ln consumption (cointegrated with LINC)')], ['LINC', L('ln รายได้ (I(1))', 'ln income (I(1))')], ['RATE', L('อัตราดอกเบี้ย (I(1))', 'Interest rate (I(1))')]],
+      var: [['GDPG', L('อัตราการเติบโต GDP (%)', 'GDP growth (%)')], ['INF', L('อัตราเงินเฟ้อ (%)', 'Inflation (%)')], ['RATE', L('อัตราดอกเบี้ยนโยบาย (%)', 'Policy rate (%)')]],
+      irf: [['OIL', L('การเปลี่ยนแปลงราคาน้ำมัน (%)', 'Oil price change (%)')], ['IPG', L('การเติบโตของผลผลิตอุตสาหกรรม (%)', 'Industrial production growth (%)')], ['CPIG', L('อัตราเงินเฟ้อรายเดือน (%)', 'Monthly CPI inflation (%)')]],
+      garch: [['INDEX', L('ดัชนีราคาหลักทรัพย์รายวัน (สร้างจาก GJR-GARCH)', 'Daily stock index (simulated from GJR-GARCH)')]]
+    }[id];
+  }
+  function loadSample() { if (!state.module) return; const S = TS.samples[state.module](); setData({ labels: S.labels, cols: S.cols, names: Object.keys(S.cols), labelName: S.labelName }, 'sample', true); }
+  function readFile(file) {
+    if (!file) return;
+    if (!window.XLSX) return showErr(L('ไม่สามารถโหลดไลบรารี Excel ได้ (ต้องเชื่อมต่ออินเทอร์เน็ต)', 'Excel library not loaded (internet required).'));
+    const fr = new FileReader();
+    fr.onload = e => {
+      try { const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' }); const ws = wb.Sheets[wb.SheetNames[0]]; const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null }); setData(parseAoa(aoa), file.name, false); }
+      catch (err) { console.error(err); showErr(L('อ่านไฟล์ไม่สำเร็จ: ', 'Could not read the file: ') + err.message); $('#step3').classList.remove('locked'); }
+    };
+    fr.readAsArrayBuffer(file);
+  }
+
+  // ---------------- reset & language ----------------
+  function resetAll() {
+    clearResults(); state.module = null; state.data = null; state.source = null; state.settings = {}; state.sel = {};
+    $('#fileIn').value = ''; $('#dataInfo').innerHTML = ''; $('#varBox').innerHTML = ''; $('#setBox').innerHTML = ''; showErr('');
+    $('#step2').classList.add('locked'); $('#step3').classList.add('locked'); $('#step2hint').classList.remove('hidden');
+    renderModules(); applyStatic(); window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function setLang(l) {
+    LANG = l; try { localStorage.setItem('tse-lang', l); } catch (e) { /* ignore */ }
+    applyStatic(); renderModules(); renderDataInfo(); renderVars(); renderSettings();
+    if (state.result) renderResults();
+  }
+
+  // ---------------- init ----------------
+  function init() {
+    if (window.Chart) {
+      Chart.defaults.font.family = "'IBM Plex Sans Thai', system-ui, sans-serif";
+      Chart.register({ id: 'bgWhite', beforeDraw(c) { const x = c.ctx; x.save(); x.globalCompositeOperation = 'destination-over'; x.fillStyle = '#ffffff'; x.fillRect(0, 0, c.width, c.height); x.restore(); } });
+    }
+    $('#btnTH').addEventListener('click', () => setLang('th')); $('#btnEN').addEventListener('click', () => setLang('en'));
+    $('#btnReset').addEventListener('click', resetAll);
+    $('#btnSample').addEventListener('click', loadSample); $('#btnDlSample').addEventListener('click', downloadSample);
+    $('#fileIn').addEventListener('change', e => readFile(e.target.files[0]));
+    const dz = $('#drop');
+    ['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('over'); }));
+    ['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('over'); }));
+    dz.addEventListener('drop', e => { const f = e.dataTransfer.files && e.dataTransfer.files[0]; if (f) readFile(f); });
+    $('#btnRun').addEventListener('click', runAnalysis);
+    $('#vTable').addEventListener('click', () => setView('table')); $('#vChart').addEventListener('click', () => setView('chart'));
+    $('#btnXlsx').addEventListener('click', downloadTables);
+    applyStatic(); renderModules();
+    if (!window.Chart || !window.XLSX) showErr(L('ไม่สามารถโหลดไลบรารีกราฟ/Excel จากอินเทอร์เน็ตได้ — บางฟังก์ชันอาจใช้งานไม่ได้', 'Chart/Excel libraries failed to load from the internet — some features may not work.'));
+  }
+  window.__TSE = { state, MODS, setLang, loadSample, runAnalysis, selectModule, setView, downloadTables, parseAoa };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+
+</script>
+</body>
+</html>
